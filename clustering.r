@@ -1,0 +1,3 @@
+makeDistMatrix <- function(data, distance) {
+	
+}
