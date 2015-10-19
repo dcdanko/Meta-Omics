@@ -42,3 +42,5 @@ centerAndScaleRows <- function(m){
 	m.scaled <- m.centered / apply(m.centered,1,max)
 	return(m.scaled)
 }
+
+

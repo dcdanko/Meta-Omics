@@ -28,7 +28,7 @@ colnames(adja) <- colnames(data)
 
 net <- graph.adjacency(adja,mode="undirected", weighted=TRUE,diag=FALSE)
 E(net)[weight < 0]$color <- "RED"
-E(net)[weight > 0]$color <- "BLUE"pag
+E(net)[weight > 0]$color <- "BLUE"
 
-print("Plotting graph...")
-plot(net, vertex.color="SKYBLUE")
+# print("Plotting graph...")
+# plot(net, vertex.color="SKYBLUE")

@@ -113,3 +113,4 @@ convertProbeDataToGeneData <- function(P, pToG){
 
 	return(G)
 }
+
