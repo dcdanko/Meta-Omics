@@ -1,7 +1,22 @@
 # cluster 'data' into 'nclust' clusters
 
-clusterAndPlotAllSeries <- function(series,nclust){
+plotRatOne <- function(ngenes=1000,nclust=5){
+	if(!exists('inf.rat1')){
+		source('load-data.r')
+		getRatOneVariableGenesWithInferredDays(ngenes)
+	}
+	cnum <- -1
+	baseline <- inf.rat1[,1]
+	baseline <- matrix(baseline,byrow=FALSE,nrow=nrow(inf.rat1),ncol=ncol(inf.rat1))
+	fold <- inf.rat1 / baseline
+	logfold <- log(fold,2)
+	data <- logfold
+	clusterAndPlotMedoidsAndSeries(data,nclust)
+}
 
+clusterAndPlotAllSeries <- function(series,nclust=5){
+	library(cluster)
+	library(dtw)
 	c.series <- pam(series,nclust,metric='dtw')
 
 	time <- 1:dim(series)[2]
@@ -21,7 +36,9 @@ clusterAndPlotAllSeries <- function(series,nclust){
 	title("Expression level by day")
 }
 
-clusterAndPlotMedoids <- function(series,nclust){
+clusterAndPlotMedoids <- function(series,nclust=5){
+	library(cluster)
+	library(dtw)
 	clustering <- pam(series,nclust,metric='dtw')
 
 	time <- 1:dim(series)[2]
@@ -78,7 +95,9 @@ clusterAndPlotMedoids <- function(series,nclust){
 
 }
 
-clusterAndPlotMedoidsAndSeries <- function(series,nclust){
+clusterAndPlotMedoidsAndSeries <- function(series,nclust=5){
+	library(cluster)
+	library(dtw)
 	c.series <- pam(series,nclust,metric='dtw')
 
 	time <- 1:dim(series)[2]
@@ -126,19 +145,19 @@ wssplot <- function(data, nc=15, seed=1234){
                      ylab="Within groups sum of squares")}
 
 inferPoints <- function(data){
-
+	library(zoo)
 	rowinterp <- function(r){
-  #                   d0   d1   d2 d3   d4 d5 d6  
-  infr <- na.spline(c(r[1],r[2],NA,r[3],NA,NA,r[4],
-  #                   d7 d8 d9 d10 d11 d12 d13 d14
-                      NA,NA,NA,NA, NA, NA, NA, r[5],
-  #                   d15 d16 d17 d18 d19 d20 d22
-                      NA, NA, NA, NA, NA, NA, r[6],
-  #                   d23 d24 d25 d26 d27 d28                    
-                      NA, NA, NA, NA, NA, r[7]))
-  return(infr)
-}
+		#                   d0   d1   d2 d3   d4 d5 d6  
+		infr <- na.spline(c(r[1],r[2],NA,r[3],NA,NA,r[4],
+		#                   d7 d8 d9 d10 d11 d12 d13 d14
+		                    NA,NA,NA,NA, NA, NA, NA, r[5],
+		#                   d15 d16 d17 d18 d19 d20 d22
+		                    NA, NA, NA, NA, NA, NA, r[6],
+		#                   d23 d24 d25 d26 d27 d28                    
+		                    NA, NA, NA, NA, NA, r[7]))
+		return(infr)
+	}
 
-
-	 return( matrix(apply(data,1,FUN=rowinterp),byrow=TRUE,nrow=dim(data)[1]))
+	apped <- apply(data,1,FUN=rowinterp)
+	return( matrix(apped,byrow=TRUE,nrow=dim(data)[1]))
 }
