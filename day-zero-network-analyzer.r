@@ -1,7 +1,7 @@
-plotTOMHeatmap <- function(ngenes=1000){
+d0.plotTOMHeatmap <- function(ngenes=1000){
 	library(WGCNA)
 	if(!exists('d0.net')){
-		getNet(ngenes=1000)
+		d0.getNet(ngenes=1000)
 	}
 	if(!exists('d0.dissTOM')){
 		d0.dissTOM <<- 1 - TOMsimilarityFromExpr( t(d0), power=16)
@@ -14,7 +14,7 @@ plotTOMHeatmap <- function(ngenes=1000){
 	TOMplot(plotTOM, d0.geneTree, d0.moduleColors, main="Network heatmap plot, all genes")
 }
 
-plotSoftThreshPowers <- function(ngenes=1000){
+d0.plotSoftThreshPowers <- function(ngenes=1000){
 	if(!exists('d0')){
 		source('load-data.r')
 		getDayZeroVariableGenes(ngenes)
@@ -43,7 +43,7 @@ plotSoftThreshPowers <- function(ngenes=1000){
 	text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
 }
 
-getNet <- function(p=16,ngenes=1000){
+d0.getNet <- function(p=16,ngenes=1000){
 	if(!exists('d0')){
 		source('load-data.r')
 		getDayZeroVariableGenes(ngenes)
@@ -63,8 +63,10 @@ getNet <- function(p=16,ngenes=1000){
 }
 
 
-plotDendo <- function(){
-
+d0.plotDendo <- function(){
+	if(!exists('d0.geneTree')){
+		d0.getNet()
+	}
 	staticHeight=0.99
 	staticColoring <- as.character( cutreeStaticColor(d0.geneTree, cutHeight=staticHeight, minSize=20))
 	dyanmicColoring <- labels2colors( cutreeDynamic(d0.geneTree, method='tree'))
@@ -73,10 +75,10 @@ plotDendo <- function(){
 						abHeight=staticHeight,dendroLabels=FALSE)
 }
 
-plotTOMDendo <- function(){
+d0.plotTOMDendo <- function(){
 	library(WGCNA)
 	if(!exists('d0.net')){
-		getNet(ngenes=1000)
+		d0.getNet(ngenes=1000)
 	}
 	if(!exists('d0.dissTOM')){
 		d0.dissTOM <<- 1 - TOMsimilarityFromExpr( t(d0), power=16)
@@ -98,9 +100,9 @@ plotTOMDendo <- function(){
 	selectedTOMColoring <<- colorStaticTOM
 }
 
-tableIntramodularConnectivity <- function(){
+d0.tableIntramodularConnectivity <- function(){
 	if(!exists('selectedTOMColoring')){
-		plotTOMDendo()
+		d0.plotTOMDendo()
 	}
 	library(WGCNA)
 

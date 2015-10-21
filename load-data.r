@@ -7,24 +7,6 @@ getDayZeroVariableGenes <- function(ngenes=1000){
 	d0 <- convertProbeDataToGeneData(d$d0[rownames(delta),], pToG)
 	d0 <<- d0[,-ncol(d0)]
 
-	# r1 <- convertProbeDataToGeneData(r$R1[rownames(delta),1,drop=FALSE] ,pToG)
-	# print("Finished converting 1/5 probe data.")
-	# r2 <- convertProbeDataToGeneData(r$R2[rownames(delta),1,drop=FALSE] ,pToG)
-	# print("Finished converting 2/5 probe data.")
-	# r3 <- convertProbeDataToGeneData(r$R3[rownames(delta),1,drop=FALSE] ,pToG)
-	# print("Finished converting 3/5 probe data.")
-	# r4 <- convertProbeDataToGeneData(r$R4[rownames(delta),1,drop=FALSE] ,pToG)
-	# print("Finished converting 4/5 probe data.")
-	# r5 <- convertProbeDataToGeneData(m[rownames(delta),7,drop=FALSE] ,pToG)
-	# print("Finished converting 5/5 probe data.")
-
-	# r1 <- r1[,-NCOL(r1)]
-	# r2 <- r2[,-NCOL(r2)]
-	# r3 <- r3[,-NCOL(r3)]
-	# r4 <- r4[,-NCOL(r4)]
-	# r5 <- r5[,-NCOL(r5)]
-
-	# d0 <<- cbind(r1, r2, r3, r4, r5)
 	return(d0)
 }
 

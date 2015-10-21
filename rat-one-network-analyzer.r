@@ -1,29 +1,36 @@
-plotTOMHeatmap <- function(ngenes=1000){
+rat1.setDefaultNProbes <- function(){
+	nprobes <<- 5000
+}
+
+rat1.plotTOMHeatmap <- function(){
 	library(WGCNA)
-	if(!exists('d0.net')){
-		getNet(ngenes=1000)
+	if(!exists('rat1.net')){
+		rat1.getNet()
 	}
-	if(!exists('d0.dissTOM')){
-		d0.dissTOM <<- 1 - TOMsimilarityFromExpr( t(d0), power=16)
+	if(!exists('rat1.dissTOM')){
+		rat1.dissTOM <<- 1 - TOMsimilarityFromExpr( t(rat1), power=16)
 	}
-	plotTOM = d0.dissTOM^7 # Makes the resulting plot easier to see
+	plotTOM = rat1.dissTOM^7 # Makes the resulting plot easier to see
 	# Set diagonal to NA for a nicer plot
 	diag(plotTOM) = NA;
 	# Call the plot function
 	sizeGrWindow(9,9)
-	TOMplot(plotTOM, d0.geneTree, d0.moduleColors, main="Network heatmap plot, all genes")
+	TOMplot(plotTOM, rat1.geneTree, rat1.moduleColors, main="Network heatmap plot, all genes")
 }
 
-plotSoftThreshPowers <- function(ngenes=1000){
-	if(!exists('d0')){
+rat1.plotSoftThreshPowers <- function(){
+	if(!exists('rat1')){
+		if(!exists('nprobes')){
+			rat1.setDefaultNProbes()
+		}
 		source('load-data.r')
-		getDayZeroVariableGenes(ngenes)
+		getRatOneVariableGenes(nprobes)
 	}
 	library(WGCNA)
 	# Choose a set of soft-thresholding powers
 	powers = c(c(1:10), seq(from = 12, to=40, by=2))
 	# Call the network topology analysis function
-	sft = pickSoftThreshold(t(d0), powerVector = powers, verbose = 5)
+	sft = pickSoftThreshold(t(rat1), powerVector = powers, verbose = 5)
 	# Plot the results:
 	sizeGrWindow(9, 5)
 	par(mfrow = c(1,2));
@@ -43,54 +50,60 @@ plotSoftThreshPowers <- function(ngenes=1000){
 	text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
 }
 
-getNet <- function(p=16,ngenes=1000){
-	if(!exists('d0')){
+rat1.getNet <- function(p=16){
+	if(!exists('rat1')){
 		source('load-data.r')
-		getDayZeroVariableGenes(ngenes)
+		if(!exists('nprobes')){
+			rat1.setDefaultNProbes()
+		}
+		getRatOneVariableGenes(nprobes)
 	}
 	library(WGCNA)
-	d0.net <<- blockwiseModules(t(d0), power = p,
+	rat1.net <<- blockwiseModules(t(rat1), power = p,
                        TOMType = "unsigned", minModuleSize = 30,
                        reassignThreshold = 0, mergeCutHeight = 0.25,
                        numericLabels = TRUE, pamRespectsDendro = FALSE,
                        verbose = 3)
 
-	d0.moduleLabels <<- d0.net$colors
-	d0.moduleColors <<- labels2colors(d0.net$colors)
-	d0.MEs <<- d0.net$MEs;
-	d0.geneTree <<- d0.net$dendrograms[[1]];
-	return(d0.net)
+	rat1.moduleLabels <<- rat1.net$colors
+	rat1.moduleColors <<- labels2colors(rat1.net$colors)
+	rat1.MEs <<- rat1.net$MEs;
+	rat1.geneTree <<- rat1.net$dendrograms[[1]];
+	return(rat1.net)
 }
 
 
-plotDendo <- function(){
+rat1.plotDendo <- function(){
+	if(!exists('rat1.geneTree')){
+		rat1.getNet()
+	}
 
 	staticHeight=0.99
-	staticColoring <- as.character( cutreeStaticColor(d0.geneTree, cutHeight=staticHeight, minSize=20))
-	dyanmicColoring <- labels2colors( cutreeDynamic(d0.geneTree, method='tree'))
+#	staticColoring <- as.character( cutreeStaticColor(rat1.geneTree, cutHeight=staticHeight, minSize=20))
+#	dynamicColoring <- labels2colors( cutreeDynamic(rat1.geneTree, method='tree'))
 	sizeGrWindow(10,5)
-	plotDendroAndColors(d0.geneTree, colors=data.frame(d0.moduleColors,staticColoring,dyanmicColoring), 
+	plotDendroAndColors(rat1.geneTree, colors=rat1.moduleColors, #,staticColoring,dynamicColoring), 
 						abHeight=staticHeight,dendroLabels=FALSE)
 }
 
-plotTOMDendo <- function(){
+rat1.plotTOMDendo <- function(){
 	library(WGCNA)
-	if(!exists('d0.net')){
-		getNet(ngenes=1000)
+	if(!exists('rat1.net')){
+		rat1.getNet()
 	}
-	if(!exists('d0.dissTOM')){
-		d0.dissTOM <<- 1 - TOMsimilarityFromExpr( t(d0), power=16)
+	if(!exists('rat1.dissTOM')){
+		rat1.dissTOM <<- 1 - TOMsimilarityFromExpr( t(rat1), power=16)
 	}
 	# Calculate the dendrogram
-	d0.hierTOM <<- hclust(as.dist(d0.dissTOM),method="average");
+	rat1.hierTOM <<- hclust(as.dist(rat1.dissTOM),method="average");
 	staticHeight=0.95
-	colorStaticTOM <- as.character(cutreeStaticColor(d0.hierTOM, cutHeight=staticHeight, minSize=20))
-	colorDynamicTOM <- labels2colors (cutreeDynamic(d0.hierTOM,method="tree"))
-	colorDynamicHybridTOM <- labels2colors(cutreeDynamic(d0.hierTOM, distM=d0.dissTOM , cutHeight=staticHeight,
+	colorStaticTOM <- as.character(cutreeStaticColor(rat1.hierTOM, cutHeight=staticHeight, minSize=20))
+	colorDynamicTOM <- labels2colors (cutreeDynamic(rat1.hierTOM,method="tree"))
+	colorDynamicHybridTOM <- labels2colors(cutreeDynamic(rat1.hierTOM, distM=rat1.dissTOM , cutHeight=staticHeight,
 	                       deepSplit=2, pamRespectsDendro = FALSE))
 	# Now we plot the results
 	sizeGrWindow(10,5)
-	plotDendroAndColors(d0.hierTOM, 
+	plotDendroAndColors(rat1.hierTOM, 
        	colors=data.frame(colorStaticTOM,colorDynamicTOM,colorDynamicHybridTOM), 
        	dendroLabels = FALSE,
        	main = "Gene dendrogram and module colors, TOM dissimilarity",
@@ -98,34 +111,34 @@ plotTOMDendo <- function(){
 	selectedTOMColoring <<- colorStaticTOM
 }
 
-tableIntramodularConnectivity <- function(){
+rat1.tableIntramodularConnectivity <- function(){
 	if(!exists('selectedTOMColoring')){
-		plotTOMDendo()
+		rat1.plotTOMDendo()
 	}
 	library(WGCNA)
 
-	ADJ1 <- abs( cor(t(d0),use='p'))^6
-	Alldegrees1 <- intramodularConnectivity(ADJ1, d0.moduleColors)
+	ADJ1 <- abs( cor(t(rat1),use='p'))^6
+	Alldegrees1 <- intramodularConnectivity(ADJ1, rat1.moduleColors)
 
 	# Makes a table of graphs comparing clusters to eigengenes.
 	# Appears that most clusters (if the clustering is valid)
 	# have a corresponding eigengene
 
 
-	d0.KME <<- signedKME(t(d0), d0.MEs, outputColumnName='MM.')
-	allColors <- names(table(d0.moduleColors)) # 4
-	allEigengenes <- colnames(d0.KME) # 9 
+	rat1.KME <<- signedKME(t(rat1), rat1.MEs, outputColumnName='MM.')
+	allColors <- names(table(rat1.moduleColors)) # 4
+	allEigengenes <- colnames(rat1.KME) # 9 
 
 	sizeGrWindow(16,12)
 	par(mar=rep(2,4), mfrow=c(length(allColors),length(allEigengenes)))
 
 	for (color in allColors){
 		which.color <- color 
-		restrictGenes <- d0.moduleColors==which.color 
+		restrictGenes <- rat1.moduleColors==which.color 
 		intramodularConnectivityForGenesInCluster <- Alldegrees1$kWithin[ restrictGenes]
 		for (eigengeneMembership in allEigengenes)
 		verboseScatterplot( intramodularConnectivityForGenesInCluster, 
-			(d0.KME[restrictGenes, eigengeneMembership])^6,
+			(rat1.KME[restrictGenes, eigengeneMembership])^6,
 			col=which.color)
 			# xlab="Intramodular Connectivity", 
 			# ylab="(Module Membership)^6")
