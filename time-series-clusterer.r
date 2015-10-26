@@ -15,9 +15,12 @@ plotRatOne <- function(ngenes=1000,nclust=5){
 }
 
 clusterAndPlotAllSeries <- function(series,nclust=5){
-	library(cluster)
-	library(dtw)
-	c.series <- pam(series,nclust,metric='dtw')
+	if(!exists('clustering')){
+		library(cluster)
+		library(dtw)
+
+		clustering <<- pam(series,nclust,metric='dtw')
+	}
 
 	time <- 1:dim(series)[2]
 	nseries <- dim(series)[1]
@@ -26,7 +29,7 @@ clusterAndPlotAllSeries <- function(series,nclust=5){
 	colors <- rainbow( nclust)
 
 	for (i in 1:nseries){
-		iclust <- c.series$cluster[i] # clustering$cluster[i]
+		iclust <- clustering$cluster[i] # clustering$cluster[i]
 		if(cnum == -1 || is.na(cnum) || cnum == iclust ){
 			lines(time, series[i,], col=colors[iclust])
 
@@ -37,9 +40,12 @@ clusterAndPlotAllSeries <- function(series,nclust=5){
 }
 
 clusterAndPlotMedoids <- function(series,nclust=5){
-	library(cluster)
-	library(dtw)
-	clustering <- pam(series,nclust,metric='dtw')
+	if(!exists('clustering')){
+		library(cluster)
+		library(dtw)
+
+		clustering <<- pam(series,nclust,metric='dtw')
+	}
 
 	time <- 1:dim(series)[2]
 
@@ -96,9 +102,12 @@ clusterAndPlotMedoids <- function(series,nclust=5){
 }
 
 clusterAndPlotMedoidsAndSeries <- function(series,nclust=5){
-	library(cluster)
-	library(dtw)
-	c.series <- pam(series,nclust,metric='dtw')
+	if(!exists('clustering')){
+		library(cluster)
+		library(dtw)
+
+		clustering <<- pam(series,nclust,metric='dtw')
+	}
 
 	time <- 1:dim(series)[2]
 	nseries <- dim(series)[1]
@@ -107,8 +116,8 @@ clusterAndPlotMedoidsAndSeries <- function(series,nclust=5){
 	colors <- rainbow( nclust)
 
 	for (i in 1:nseries){
-		iclust <- c.series$cluster[i] # clustering$cluster[i]
-		if(cnum == -1 || is.na(cnum) || cnum == iclust ){
+		iclust <- clustering$cluster[i] # clustering$cluster[i]
+		if(is.na(cnum) || cnum == -1 || cnum == iclust ){
 			lines(time, series[i,], col=colors[iclust])
 
 		}
@@ -116,8 +125,11 @@ clusterAndPlotMedoidsAndSeries <- function(series,nclust=5){
 
 
 	for (i in 1:nclust){
-		lines(time, c.series$medoids[i,], col="BLACK")
+		if(is.na(cnum) || cnum == -1 || cnum == i ){
+			lines(time, clustering$medoids[i,], col="BLACK")
+		}
 	}
+
 
 	title("Expression level by day")
 

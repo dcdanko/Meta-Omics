@@ -1,5 +1,5 @@
 
-plotTOMHeatmap <- function(day='d0',ngenes=1000){
+plotTOMHeatmap <- function(day='peak',ngenes=1000){
 	library(WGCNA)
 	if(!exists('dnet')){
 		getNet(day=day, ngenes=ngenes)
@@ -14,11 +14,11 @@ plotTOMHeatmap <- function(day='d0',ngenes=1000){
 	TOMplot(plotTOM, dnet$day$dendrograms[[1]], labels2colors(dnet$day$colors), main="Network heatmap plot, all genes")
 }
 
-plotSoftThreshPowers <- function(day='d0', ngenes=1000){
+plotSoftThreshPowers <- function(day='peak', ngenes=1000){
 	library(WGCNA)
 	if(!exists('days')){
 		source('load-data.r')
-		getEveryDayVariableGenes(ngenes)
+		getEveryStageVariableGenes(ngenes)
 	}
 	# Choose a set of soft-thresholding powers
 	powers = c(c(1:10), seq(from = 12, to=40, by=2))
@@ -44,10 +44,10 @@ plotSoftThreshPowers <- function(day='d0', ngenes=1000){
 	text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
 }
 
-getNet <- function(day='d0',p=16,ngenes=1000){
+getNet <- function(day='peak',p=16,ngenes=1000){
 	if(!exists('days')){
 		source('load-data.r')
-		getEveryDayVariableGenes(ngenes=ngenes)
+		getEveryStageVariableGenes(ngenes=ngenes)
 	}
 	library(WGCNA)
 	dnet <<- list()
@@ -64,7 +64,7 @@ getNet <- function(day='d0',p=16,ngenes=1000){
 }
 
 
-plotTOMDendo <- function(day='d0',ngenes=1000){
+plotTOMDendo <- function(day='peak',ngenes=1000){
 	library(WGCNA)
 	if(!exists('dnet')){
 		getNet(day=day, ngenes=ngenes)
