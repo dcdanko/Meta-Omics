@@ -5,10 +5,24 @@ plotRatOne <- function(ngenes=1000,nclust=5){
 		source('load-data.r')
 		getRatOneVariableGenesWithInferredDays(ngenes)
 	}
-	cnum <- -1
+	cnum <<- -1
 	baseline <- inf.rat1[,1]
 	baseline <- matrix(baseline,byrow=FALSE,nrow=nrow(inf.rat1),ncol=ncol(inf.rat1))
 	fold <- inf.rat1 / baseline
+	logfold <- log(fold,2)
+	data <- logfold
+	clusterAndPlotMedoidsAndSeries(data,nclust)
+}
+
+plotRatAve <- function(ngenes=1000,nclust=5){
+	if(!exists('inf.ratA')){
+		source('load-data.r')
+		getRatAveVariableGenesWithInferredDays(ngenes)
+	}
+	cnum <<- -1
+	baseline <- inf.ratA[,1]
+	baseline <- matrix(baseline,byrow=FALSE,nrow=nrow(inf.ratA),ncol=ncol(inf.ratA))
+	fold <- inf.ratA / baseline
 	logfold <- log(fold,2)
 	data <- logfold
 	clusterAndPlotMedoidsAndSeries(data,nclust)
@@ -115,7 +129,7 @@ clusterAndPlotMedoidsAndSeries <- function(series,nclust=5){
 	plot(range(time), range(series), type='n', xlab="Day", ylab="Exp. Level")
 	colors <- rainbow( nclust)
 
-	for (i in 1:nseries){
+	for (i in sample(1:nseries)){
 		iclust <- clustering$cluster[i] # clustering$cluster[i]
 		if(is.na(cnum) || cnum == -1 || cnum == iclust ){
 			lines(time, series[i,], col=colors[iclust])

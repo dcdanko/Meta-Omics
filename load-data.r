@@ -27,10 +27,9 @@ getEveryStageVariableGenes <- function(ngenes=1000){
 	if(!exists('days')){
 		getEveryDayVariableGenes(ngenes=ngenes)
 	}
-	delta <- getTopVaryingGenesComplex(ngenes)
 
 	days$rise <<- cbind(days$d0,days$d1)
-	days$peak <<- cbind(days$d6,days$d14)
+	gdays$peak <<- cbind(days$d6,days$d14)
 	days$all <<- cbind(days$d0,days$d1,days$d3,days$d6,days$d14,days$d21,days$d28)
 
 }
@@ -53,8 +52,30 @@ getRatOneVariableGenesWithInferredDays <- function(ngenes=1000){
 	return(inf.rat1)
 }
 
+getRatAveVariableGenes <- function(ngenes=1000){
+	getMicroData()
+	r <- splitMicroarrayMatrixByRat(g)
+	rA <- r$R1+r$R2+r$R3+r$R4
+	rA <- rA / 4
+
+	delta <- getTopVaryingGenesComplex(ngenes)
+
+	ratA <<- rA[rownames(delta),]
+	return(ratA)
+}
+
+getRatAveVariableGenesWithInferredDays <- function(ngenes=1000){
+	if(!exists('ratA')){
+		getRatAveVariableGenes(ngenes)
+	}
+	source('time-series-clusterer.r')
+	inf.ratA <<- inferPoints(ratA)
+	return(inf.ratA)
+}
+
 getMicroData <- function(){
-	if(!exists('g')){
+	if(!exi	ratA <<- rA[rownames(delta),]
+sts('g')){
 		source('microarray.r')
 		print("Reading in gene microarray")
 		g <<- readInMicroarray('data/sample_gene_profile.matrix')
@@ -109,6 +130,16 @@ getTopVaryingGenesComplex <- function(ngenes=1000){
 	delta <- delta[1:ngenes,,drop=FALSE]
 	return(delta)
 
+}
+
+getRatAveFoldChange <- function(ngenes=1000){
+	if(!exists('ratA')){
+		getRatAveVariableGenes(ngenes)
+	}
+
+	rA.d0 <- ratA[,1,drop=FALSE]
+	baseline <- cbind(rA.d0,rA.d0,rA.d0,rA.d0,rA.d0,rA.d0,rA.d0)
+	ratA.fold <<- ratA / baseline
 }
 
 

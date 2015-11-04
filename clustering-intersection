@@ -1,0 +1,272 @@
+*** basic ***
+
+> length(enrichedgenes)
+[1] 1412
+> length(neutralgenes)
+[1] 446
+> length(dimgenes)
+[1] 1142
+> over(allgenes,enrichedgenes)
+[1] 0.4706667
+> over(allgenes,neutralgenes)
+[1] 0.1486667
+> over(allgenes,dimgenes)
+[1] 0.3806667
+
+
+
+*** all days ***
+
+# The blue and brown clusters are both
+# highly enriched for increasing genes
+
+> incenriched(blueAD)
+[1] 1.505334
+> incenriched(brownAD)
+[1] 1.837884
+> incenriched(turqAD)
+[1] 0.7991688
+
+> over(neutralgenes,allAD)
+[1] 0.9103139
+> over(enrichedgenes,allAD)
+[1] 0.9603399
+> over(dimgenes,allAD)
+[1] 0.8791594
+> length(allAD)
+[1] 2766
+
+> over(blueAD,nonneutral)
+[1] 0.9446809
+> over(brownAD,nonneutral)
+[1] 0.9969325
+> over(turqAD,nonneutral)
+[1] 0.8076142
+
+> over(blueAD,dimgenes)
+[1] 0.2361702
+> over(brownAD,dimgenes)
+[1] 0.1319018
+> over(turqAD,dimgenes)
+[1] 0.4314721
+
+> over(blueAD,enrichedgenes)
+[1] 0.7085106
+> over(brownAD,enrichedgenes)
+[1] 0.8650307
+> over(turqAD,enrichedgenes)
+[1] 0.3761421
+
+
+*** peak ***
+
+> length(allPeak)
+[1] 1858
+> over(enrichedgenes,allPeak)
+[1] 0.6395184
+> over(dimgenes,allPeak)
+[1] 0.5980736
+> over(neutralgenes,allPeak)
+[1] 0.6098655
+> length(peakbrown)
+[1] 256
+> length(peakyell)
+[1] 185
+> length(peakblue)
+[1] 488
+> length(peakturq)
+[1] 929
+
+
+# The brown cluster is greatly enriched for genes 
+# which increase their expression.
+
+> length(intersect(peakbrown,enrichedgenes))/(enrichedratio*length(peakbrown))
+[1] 1.319604
+> length(intersect(peakbrown,dimgenes))/(dirat*length(peakbrown))
+[1] 0.851713
+> length(intersect(peakbrown,neutralgenes))/(nerat*length(peakbrown))
+[1] 0.3678531
+
+# The yellow cluster is somewhat enriched for genes 
+# which increase expression
+
+> length(intersect(peakyell,enrichedgenes))/(enrat*length(peakyell))
+[1] 1.07955
+> length(intersect(peakyell,dimgenes))/(dirat*length(peakyell))
+[1] 0.9513892
+> length(intersect(peakyell,neutralgenes))/(nerat*length(peakyell))
+[1] 0.8726215
+
+
+
+> over(peakyell,nonneutral)
+[1] 0.8702703
+> over(peakturq,nonneutral)
+[1] 0.8525296
+> over(peakblue,nonneutral)
+[1] 0.8012295
+> over(peakbrown,nonneutral)
+[1] 0.9453125
+
+> over(peakbrown,dimgenes)
+[1] 0.3242188
+> over(peakblue,dimgenes)
+[1] 0.4180328
+> over(peakturq,dimgenes)
+[1] 0.3541442
+> over(peakyell,dimgenes)
+[1] 0.3621622
+
+> over(peakyell,enrichedgenes)
+[1] 0.5081081
+> over(peakturq,enrichedgenes)
+[1] 0.4983854
+> over(peakblue,enrichedgenes)
+[1] 0.3831967
+> over(peakbrown,enrichedgenes)
+[1] 0.6210938
+
+*** rise ***
+
+# blue and brown are enriched
+
+> incenriched(riseblue)
+[1] 1.197886
+> incenriched(risered)
+[1] 0.8328612
+> incenriched(risebrown)
+[1] 1.332852
+> incenriched(riseturq)
+[1] 0.9115491
+
+
+> over(risebrown,nonneutral)
+[1] 0.931677
+> over(riseblue,nonneutral)
+[1] 0.9048724
+> over(risered,nonneutral)
+[1] 0.872
+> over(riseturq,nonneutral)
+[1] 0.8320693
+
+> over(risebrown,enrichedgenes)
+[1] 0.6273292
+> over(riseblue,enrichedgenes)
+[1] 0.5638051
+> over(risered,enrichedgenes)
+[1] 0.392
+> over(riseturq,enrichedgenes)
+[1] 0.4290358
+
+> over(risebrown,dimgenes)
+[1] 0.3043478
+> over(riseblue,dimgenes)
+[1] 0.3410673
+> over(risered,dimgenes)
+[1] 0.48
+> over(riseturq,dimgenes)
+[1] 0.4030336
+
+
+*** cross analysis ***
+> length(peakbrown)
+[1] 256
+> length(peakyell)
+[1] 185
+> length(riseblue)
+[1] 431
+> length(risebrown)
+[1] 161
+> length(blueAD)
+[1] 470
+> length(brownAD)
+[1] 326
+> length(t)
+[1] 1627
+> incenriched(t)
+[1] 1.234044
+
+> te <- intersect(t,enrichedgenes)
+> length(te)
+[1] 945
+> tn <- intersect(t,nonneutral)
+> length(tn)
+[1] 1464
+
+
+
+> simset(peakbrown,riseblue)
+[1] "jaccard:  0.0585516178736518"
+[1] "over a:  0.1484375"
+[1] "over b:  0.0881670533642691"
+> simset(peakbrown,risebrown)
+[1] "jaccard:  0.0145985401459854"
+[1] "over a:  0.0234375"
+[1] "over b:  0.0372670807453416"
+> simset(peakbrown,blueAD)
+[1] "jaccard:  0.186274509803922"
+[1] "over a:  0.4453125"
+[1] "over b:  0.242553191489362"
+> simset(peakbrown,brownAD)
+[1] "jaccard:  0.00172117039586919"
+[1] "over a:  0.00390625"
+[1] "over b:  0.00306748466257669"
+> simset(peakyell,riseblue)
+[1] "jaccard:  0.0423011844331641"
+[1] "over a:  0.135135135135135"
+[1] "over b:  0.0580046403712297"
+> simset(peakyell,risebrown)
+[1] "jaccard:  0.0176470588235294"
+[1] "over a:  0.0324324324324324"
+[1] "over b:  0.0372670807453416"
+> simset(peakyell,blueAD)
+[1] "jaccard:  0.0170807453416149"
+[1] "over a:  0.0594594594594595"
+[1] "over b:  0.0234042553191489"
+> simset(peakyell,brownAD)
+[1] "jaccard:  0.00392927308447937"
+[1] "over a:  0.0108108108108108"
+[1] "over b:  0.00613496932515337"
+> 
+> simset(riseblue, blueAD)
+[1] "jaccard:  0.140506329113924"
+[1] "over a:  0.25754060324826"
+[1] "over b:  0.236170212765957"
+> simset(riseblue, brownAD)
+[1] "jaccard:  0.0341530054644809"
+[1] "over a:  0.0580046403712297"
+[1] "over b:  0.0766871165644172"
+> 
+> simset(risebrown, blueAD)
+[1] "jaccard:  0.0144694533762058"
+[1] "over a:  0.0559006211180124"
+[1] "over b:  0.0191489361702128"
+> simset(risebrown, brownAD)
+[1] "jaccard:  0.145882352941176"
+[1] "over a:  0.385093167701863"
+[1] "over b:  0.190184049079755"
+
+> imppeak <- union(peakbrown,peakyell)
+> imprise <- union(riseblue,risebrown)
+> impall <- union(blueAD,brownAD)
+> impint <- intersect(imppeak,imprise)
+> impint <- intersect(impint,impall)
+> impint
+ [1] "CIDEB"         "AI326906"      "PSME3"         "LOC382092"    
+ [5] "NUP85"         "ABTB1"         "APITD1"        "RAB15"        
+ [9] "USP39"         "1200014P03RIK" "4921511I23RIK" "FOXM1"        
+[13] "BIRC1A"        "PPM1G"         "NCAPD2"        "RUVBL2"       
+[17] "FBL"           "OPTN"          "2600005C20RIK" "6720467C03RIK"
+[21] "MRPS18B"       "SULT2B1"       "H2AFX"         "FARSB"        
+[25] "PTE2B"        
+> intersect(impint,enrichedgenes)
+ [1] "CIDEB"         "AI326906"      "PSME3"         "LOC382092"    
+ [5] "NUP85"         "APITD1"        "USP39"         "1200014P03RIK"
+ [9] "4921511I23RIK" "FOXM1"         "BIRC1A"        "PPM1G"        
+[13] "NCAPD2"        "RUVBL2"        "FBL"           "OPTN"         
+[17] "2600005C20RIK" "MRPS18B"       "SULT2B1"       "H2AFX"        
+[21] "FARSB"         "PTE2B"        
+> impint == intersect(impint,nonneutral)
+ [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+[16] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRU

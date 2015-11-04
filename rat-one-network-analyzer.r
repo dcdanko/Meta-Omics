@@ -145,3 +145,7 @@ rat1.tableIntramodularConnectivity <- function(){
 	}
 
 }
+
+rat1.corEGWithDay <- function(){
+	
+}
