@@ -17,9 +17,7 @@ readInMicroarray <- function(filename,idsfirst=FALSE){
 }
 
 getNorms <- function(fname){
-	if(!exists('norms')){
-		norms <<- getClipNorms(fname, 12000) # 300 for genus, 4,000 for nogs
-	}
+	norms <- getClipNorms(fname, -1) # 300 for genus, 4,000 for nogs
 	return(norms)
 }
 
@@ -34,65 +32,64 @@ getClipNorms <- function(fname, ngenes){
 		r[[arat]] <- norms[,grepl(arat,colnames(norms))]
 	}
 
-	infostr <- paste("Reducing to the ", ngenes)
-	infostr <- paste(infostr," most varying counts that are not NAN")
-	print(infostr)
+	if(ngenes > 1){
+		infostr <- paste("Reducing to the ", ngenes)
+		infostr <- paste(infostr," most varying counts that are not NAN")
+		print(infostr)
 
-	rA <- r$R1+r$R2+r$R3+r$R4+r$R5+r$R6+r$R7+r$R8
-	rA <- rA / 8
-	rA.d0 <- rA[,1,drop=FALSE]
-	baseline <- cbind(rA.d0,rA.d0,rA.d0,rA.d0,rA.d0)
-	rA.logfold <- log(rA / baseline)
+		rA <- r$R1+r$R2+r$R3+r$R4+r$R5+r$R6+r$R7+r$R8
+		rA <- rA / 8
+		rA.d0 <- rA[,1,drop=FALSE]
+		baseline <- cbind(rA.d0,rA.d0,rA.d0,rA.d0,rA.d0)
+		rA.logfold <- log(rA / baseline)
 
-	rowf <- function(row){
-		return( sum(abs(row)))
+		rowf <- function(row){
+			return( sum(abs(row)))
+		}
+
+		deltavec <- apply(rA.logfold,1,rowf)
+		deltavec <- deltavec[!is.na(deltavec)]
+		delta <- matrix(deltavec,ncol=1)
+		rownames(delta) <- names(deltavec)
+		delta <- delta[ order(delta[,1]),,drop=FALSE]
+		delta <- delta[ nrow(delta):1,,drop=FALSE]
+
+		plot(1:nrow(delta),delta[,1])
+		delta <- delta[1:ngenes,,drop=FALSE]
+		norms <- norms[rownames(delta),]
 	}
 
-	deltavec <- apply(rA.logfold,1,rowf)
-	deltavec <- deltavec[!is.na(deltavec)]
-	delta <- matrix(deltavec,ncol=1)
-	rownames(delta) <- names(deltavec)
-	delta <- delta[ order(delta[,1]),,drop=FALSE]
-	delta <- delta[ nrow(delta):1,,drop=FALSE]
 
-	plot(1:nrow(delta),delta[,1])
-	delta <- delta[1:ngenes,,drop=FALSE]
-
-
-	return(norms[rownames(delta),])
+	return(norms)
 
 }
 
 
 getNormsByDay <- function(fname){
-	if(!exists('norms.byday')){
-		norms <- getNorms(fname)
-		# names are of the form: 'stool.day6.R1.diamond_count'
-		# make a list of days
-		splits <- strsplit(colnames(norms), split='[.]')
-		days <- sapply(sapply(splits,head,n=2), tail,n=1)
-		udays <- unique(days)
-		norms.byday <<- list(mode="matrix")
-		for (aDay in udays){
-			norms.byday[[aDay]] <<- norms[,grepl(aDay,colnames(norms))]
-		}
+	norms <- getNorms(fname)
+	# names are of the form: 'stool.day6.R1.diamond_count'
+	# make a list of days
+	splits <- strsplit(colnames(norms), split='[.]')
+	days <- sapply(sapply(splits,head,n=2), tail,n=1)
+	udays <- unique(days)
+	norms.byday <<- list(mode="matrix")
+	for (aDay in udays){
+		norms.byday[[aDay]] <<- norms[,grepl(aDay,colnames(norms))]
 	}
 	return(norms.byday)
 }
 
 getNormsByRat <- function(fname){
-	if(!exists('norms.byrat')){
-		norms <- getNorms(fname)
+	norms <- getNorms(fname)
 
-		# names are of the form: 'stool.day6.R1.diamond_count'
-		# make a list of days
-		splits <- strsplit(colnames(norms), split='[.|-]')
-		rats <- sapply(sapply(splits,head,n=3), tail,n=1)
-		urats <- unique(rats)
-		norms.byrat <<- list(mode="matrix")
-		for (arat in urats){
-			norms.byrat[[arat]] <<- norms[,grepl(arat,colnames(norms))]
-		}
+	# names are of the form: 'stool.day6.R1.diamond_count'
+	# make a list of days
+	splits <- strsplit(colnames(norms), split='[.|-]')
+	rats <- sapply(sapply(splits,head,n=3), tail,n=1)
+	urats <- unique(rats)
+	norms.byrat <<- list(mode="matrix")
+	for (arat in urats){
+		norms.byrat[[arat]] <<- norms[,grepl(arat,colnames(norms))]
 	}
 	return(norms.byrat)
 }
@@ -153,110 +150,394 @@ plotTomHeatmap <- function(fname, day='day6',p=16){
 
 
 analyze <- function(){
-	# print( paste('plotting normalized nogs on',d))
-	# plotTomHeatmap('hh_ail10r_timecourse_metagenomics/data/normalised_counts/gene_counts.norm.matrix',day=d)
-	# print( paste('plotting normalized genus on',d))
-	
 
-	# print( paste('plotting raw nogs on',d))
-	# plotTomHeatmap('gene_counts.tsv',day=d)
+}
 
-	# dontprint <- getNormsByRat('hh_ail10r_timecourse_metagenomics/data/normalised_counts/gene_counts.norm.matrix')
-	r1 <- norms.byrat$R1
-	delr1 <- r1[,2:5] - r1[,1:4]
-	baser1 <- r1[,1:4]
-	r2 <- norms.byrat$R2
-	delr2 <- r2[,2:5] - r2[,1:4]
-	baser2 <- r2[,1:4]
-	r3 <- norms.byrat$R3
-	delr3 <- r3[,2:5] - r3[,1:4]
-	baser3 <- r3[,1:4]
-	r4 <- norms.byrat$R4
-	delr4 <- r4[,2:5] - r4[,1:4]
-	baser4 <- r4[,1:4]
-	r5 <- norms.byrat$R5
-	delr5 <- r5[,2:5] - r5[,1:4]
-	baser5 <- r5[,1:4]
-	r6 <- norms.byrat$R6
-	delr6 <- r6[,2:5] - r6[,1:4]
-	baser6 <- r6[,1:4]
-	r7 <- norms.byrat$R7
-	delr7 <- r7[,2:5] - r7[,1:4]
-	baser7 <- r7[,1:4]
-	r8 <- norms.byrat$R8
-	delr8 <- r8[,2:5] - r8[,1:4]
-	baser8 <- r8[,1:4]
+analyze_drivercorr <- function(){
+	dnames <- getDataNames()
+	dnames <- dnames
+	onames <- getOutNames('hh_results/driver_corr/','.norm.driver_corr.csv')
+	onames <- onames
 
-	delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
-	baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
+	for (i in 1:length(dnames)){
+		dname <- dnames[i]
+		oname <- onames[i]
 
-	colnames(delall) <- c('r1.del.d0d3','r1.del.d3d6','r1.del.d6d14','r1.del.d14d28',
-		'r2.del.d0d3','r2.del.d3d6','r2.del.d6d14','r2.del.d14d28',
-		'r3.del.d0d3','r3.del.d3d6','r3.del.d6d14','r3.del.d14d28',
-		'r4.del.d0d3','r4.del.d3d6','r4.del.d6d14','r4.del.d14d28',
-		'r5.del.d0d3','r5.del.d3d6','r5.del.d6d14','r5.del.d14d28',
-		'r6.del.d0d3','r6.del.d3d6','r6.del.d6d14','r6.del.d14d28',
-		'r7.del.d0d3','r7.del.d3d6','r7.del.d6d14','r7.del.d14d28',
-		'r8.del.d0d3','r8.del.d3d6','r8.del.d6d14','r8.del.d14d28')
+		dontprint <- getNormsByRat(dname)
+		r1 <- norms.byrat$R1
+		delr1 <- r1[,2:5] - r1[,1:4]
+		baser1 <- r1[,1:4]
+		r2 <- norms.byrat$R2
+		delr2 <- r2[,2:5] - r2[,1:4]
+		baser2 <- r2[,1:4]
+		r3 <- norms.byrat$R3
+		delr3 <- r3[,2:5] - r3[,1:4]
+		baser3 <- r3[,1:4]
+		r4 <- norms.byrat$R4
+		delr4 <- r4[,2:5] - r4[,1:4]
+		baser4 <- r4[,1:4]
+		r5 <- norms.byrat$R5
+		delr5 <- r5[,2:5] - r5[,1:4]
+		baser5 <- r5[,1:4]
+		r6 <- norms.byrat$R6
+		delr6 <- r6[,2:5] - r6[,1:4]
+		baser6 <- r6[,1:4]
+		r7 <- norms.byrat$R7
+		delr7 <- r7[,2:5] - r7[,1:4]
+		baser7 <- r7[,1:4]
+		r8 <- norms.byrat$R8
+		delr8 <- r8[,2:5] - r8[,1:4]
+		baser8 <- r8[,1:4]
 
-	colnames(baseall) <- c('r1.base.d0','r1.base.d3','r1.base.d6','r1.base.d14',
-		'r2.base.d0','r2.base.d3','r2.base.d6','r2.base.d14',
-		'r3.base.d0','r3.base.d3','r3.base.d6','r3.base.d14',
-		'r4.base.d0','r4.base.d3','r4.base.d6','r4.base.d14',
-		'r5.base.d0','r5.base.d3','r5.base.d6','r5.base.d14',
-		'r6.base.d0','r6.base.d3','r6.base.d6','r6.base.d14',
-		'r7.base.d0','r7.base.d3','r7.base.d6','r7.base.d14',
-		'r8.base.d0','r8.base.d3','r8.base.d6','r8.base.d14')
+		delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
+		baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
 
-	intersects <- c()
-	slopes <- c()
-	sps <- c()
-	ips <- c()
-	inds <- c()
-	deps <- c()
+		colnames(delall) <- c('r1.del.d0d3','r1.del.d3d6','r1.del.d6d14','r1.del.d14d28',
+			'r2.del.d0d3','r2.del.d3d6','r2.del.d6d14','r2.del.d14d28',
+			'r3.del.d0d3','r3.del.d3d6','r3.del.d6d14','r3.del.d14d28',
+			'r4.del.d0d3','r4.del.d3d6','r4.del.d6d14','r4.del.d14d28',
+			'r5.del.d0d3','r5.del.d3d6','r5.del.d6d14','r5.del.d14d28',
+			'r6.del.d0d3','r6.del.d3d6','r6.del.d6d14','r6.del.d14d28',
+			'r7.del.d0d3','r7.del.d3d6','r7.del.d6d14','r7.del.d14d28',
+			'r8.del.d0d3','r8.del.d3d6','r8.del.d6d14','r8.del.d14d28')
 
+		colnames(baseall) <- c('r1.base.d0','r1.base.d3','r1.base.d6','r1.base.d14',
+			'r2.base.d0','r2.base.d3','r2.base.d6','r2.base.d14',
+			'r3.base.d0','r3.base.d3','r3.base.d6','r3.base.d14',
+			'r4.base.d0','r4.base.d3','r4.base.d6','r4.base.d14',
+			'r5.base.d0','r5.base.d3','r5.base.d6','r5.base.d14',
+			'r6.base.d0','r6.base.d3','r6.base.d6','r6.base.d14',
+			'r7.base.d0','r7.base.d3','r7.base.d6','r7.base.d14',
+			'r8.base.d0','r8.base.d3','r8.base.d6','r8.base.d14')
 
-	for (i in 1:nrow(r1)){
-		for (j in 1:nrow(r1)){
-			ind <- baseall[j,]
-			dep <- delall[i,]
+		intersects <- c()
+		slopes <- c()
+		sps <- c()
+		ips <- c()
+		inds <- c()
+		deps <- c()
+
+		baseall <- cbind(rownames(baseall),baseall)
+		delall <- cbind(rownames(delall),delall)
+
+		depfunc <- function(dep){
+			apply(baseall,1,basefunc,dep)
+			
+		}
+
+		basefunc <- function(indy,depy){
+			indname <- indy[1]
+			ind <- indy[-1]
+			depname <- depy[1]
+			dep <- depy[-1]
+
 			if( length(ind[ind==0]) < 9 && length(dep[dep==0]) < 9){ # limit regression to data with enough non-zero values
-				fit <- lm(ind ~ dep)
-				slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
-				interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
-				if(!is.na(slopepval) && slopepval < 0.05){ 
-					intersects <- append(intersects, summary(fit)$coefficients[1,1])
-					slopes <- append(slopes, summary(fit)$coefficients[2,1])
-					sps <- append(sps, slopepval)
-					ips <- append(ips, interceptpval)
-					inds <- append(inds, rownames(r1)[j])
-					deps <- append(deps, rownames(r1)[i])
+					fit <- lm(ind ~ dep)
+					slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
+					interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
+					if(!is.na(slopepval) && slopepval < 0.05){ 
+						intersects <<- append(intersects, summary(fit)$coefficients[1,1])
+						slopes <<- append(slopes, summary(fit)$coefficients[2,1])
+						sps <<- append(sps, slopepval)
+						ips <<- append(ips, interceptpval)
+						inds <<- append(inds, indname)
+						deps <<- append(deps, depname)
+					}
 				}
+		}
+
+		apply(delall,1,depfunc)
+
+		# for (i in 1:nrow(r1)){
+		# 	if( i %% 100 == 0){
+		# 		print( paste('row:',i))
+		# 	}
+		# 	for (j in 1:nrow(r1)){
+		# 		ind <- baseall[j,]
+		# 		dep <- delall[i,]
+		# 		if( length(ind[ind==0]) < 9 && length(dep[dep==0]) < 9){ # limit regression to data with enough non-zero values
+		# 			fit <- lm(ind ~ dep)
+		# 			slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
+		# 			interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
+		# 			if(!is.na(slopepval) && slopepval < 0.05){ 
+		# 				intersects <- append(intersects, summary(fit)$coefficients[1,1])
+		# 				slopes <- append(slopes, summary(fit)$coefficients[2,1])
+		# 				sps <- append(sps, slopepval)
+		# 				ips <- append(ips, interceptpval)
+		# 				inds <- append(inds, rownames(r1)[j])
+		# 				deps <- append(deps, rownames(r1)[i])
+		# 			}
+		# 		}
+		# 	}
+		# }
+
+		timedependencies <- data.frame(inds, deps, slopes, intersects, sps, ips)
+		write.csv(timedependencies,oname)
+	}
+}
+
+analyze_spcorr <- function(){
+	norms <- getNorms('hh_data_norm/class.diamond.aggregated.counts.norm.matrix')
+	library(Hmisc)
+
+	disease <- c( rep(0,8), rep(1,8), rep(2,8), rep(4,8), rep(3,8))
+	nogs <- c()
+	rhos <- c()
+	ps <- c()
+	for (i in 1:nrow(norms)){
+		val <- norms[i,]
+		c <- rcorr(disease, val, type='spearman')
+		nog <- rownames(norms)[i]
+		rho <- c$r[1,2]
+		p <- c$P[1,2]
+		if(p < 0.05){
+			nogs <- append(nogs, nog)
+			rhos <- append(rhos, rho)
+			ps <- append(ps, p)
+		} 
+	}
+
+	spearmancorrs <<- data.frame(nogs,rhos,ps)
+	write.csv(spearmancorrs, 'hh_results/class.norms.diseasebyday.spearman_corr.csv')
+}
+
+
+
+analyze_abundances <- function(){
+	dnames <- getDataNames()
+	onames <- getOutNames('hh_results/abundances/','.norm.abundances.csv')
+	for (i in 1:length(dnames)){
+		dname <- dnames[i]
+		oname <- onames[i]
+
+		norms <- getNorms(dname)
+		sc <- scale(norms, center=FALSE, scale=colSums(norms))
+		write.csv(sc, oname)
+	}
+}
+
+getDataNames <- function(){
+	names <- c('hh_data_norm/species.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/genus.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/family.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/order.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/class.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/phylum.diamond.aggregated.counts.norm.matrix',
+		'hh_data_norm/gene_counts.norm.matrix')
+	return(names)
+}
+
+getOutNames <- function(prefix, suffix){
+	names <- c('species','genus','family','order','class','phylum','gene_counts')
+	onames <- paste(prefix,names,sep='')
+	onames <- paste(onames,suffix,sep='')
+	return(onames)
+}
+
+getBaseNames <- function(){
+	base <- c('species','genus','family','order','class','phylum','gene_counts')
+	return(base)
+}
+
+analyze_movers <- function(){
+	dnames <- getDataNames()
+	onames <- getOutNames('hh_results/early_movers/','.norm.8.early_movers.csv')
+	bnames <- getBaseNames()
+
+	for(startday in 1:4){
+		for(endday in (startday+1):5){
+
+			dnames <- getDataNames()
+			suffix <- paste('.norm.8.',startday,sep='')
+			suffix <- paste(suffix,'to',sep='')
+			suffix <- paste(suffix,endday,sep='')
+			suffix <- paste(suffix,'.movers.csv',sep='')
+			onames <- getOutNames('hh_results/movers/',suffix)
+			bnames <- getBaseNames()
+
+
+	for (i in 1:length(dnames)){
+
+
+		dname <- dnames[i]
+		oname <- onames[i]
+		print(oname)
+		bname <- bnames[i]
+
+		dontprint <- getNormsByRat(dname)
+		r1 <- norms.byrat$R1
+		br1 <- (r1[,endday,drop=FALSE] - r1[,startday,drop=FALSE])
+		r2 <- norms.byrat$R2
+		br2 <- (r2[,endday,drop=FALSE] - r2[,startday,drop=FALSE])
+		r3 <- norms.byrat$R3
+		br3 <- (r3[,endday,drop=FALSE] - r3[,startday,drop=FALSE])
+		r4 <- norms.byrat$R4
+		br4 <- (r4[,endday,drop=FALSE] - r4[,startday,drop=FALSE])
+
+		r5 <- norms.byrat$R5
+		br5 <- (r5[,endday,drop=FALSE] - r5[,startday,drop=FALSE])
+		r6 <- norms.byrat$R6
+		br6 <- (r6[,endday,drop=FALSE] - r6[,startday,drop=FALSE])
+		r7 <- norms.byrat$R7
+		br7 <- (r7[,endday,drop=FALSE] - r7[,startday,drop=FALSE])
+		r8 <- norms.byrat$R8
+		br8 <- (r8[,endday,drop=FALSE] - r8[,startday,drop=FALSE])
+
+		sumr <- sign(br1)+sign(br2)+sign(br3)+sign(br4)+sign(br5)+sign(br6)+sign(br7)+sign(br8)
+		aver <- (br1+br2+br3+br4+br5+br6+br7+br8)/8
+		early_risers <- rownames(sumr[sumr >= 8,,drop=FALSE])
+		early_droppers <- rownames(sumr[sumr <= -8,,drop=FALSE])
+		aver_risers <- aver[early_risers,,drop=FALSE]
+		aver_droppers <- aver[early_droppers,,drop=FALSE]
+		aver <- rbind(aver_risers,aver_droppers)
+		aver <- cbind(rownames(aver),aver[,1])
+		rownames(aver) <- NULL
+		title <- paste('ave_change_',startday,sep='')
+		title <- paste(title,'_to_',sep='')
+		title <- paste(title,endday,sep='')
+		title <- paste(title,'_direction_conserved_in_8_of_8',sep='')
+		colnames(aver) <- c(bname,title)
+		write.csv(aver,oname)
+	}
+	}}
+
+}
+
+get_driver_matrix <- function(fname){
+	drives <- read.csv(fname)[,-1]
+
+	m <- matrix(nrow=0,ncol=0)
+	matrixmaker <- function(driver){
+		#print(driver)
+		ind <- driver[1]
+		dep <- driver[2]
+		slope <- as.numeric(driver[3])
+		p <- as.numeric(driver[5])
+		if(p<0.01){
+			#print(m)
+			if( ind %in% colnames(m)){
+				if( !(dep %in% rownames(m))) {
+					newrow <- rep(NA,ncol(m))
+					oldnames <- rownames(m)
+					m <<- rbind(m,newrow)
+					rownames(m) <<- c(oldnames,dep)
+				}
+				m[dep,ind] <<- slope
+			} else if(dep %in% rownames(m)){
+				# we already know ind is not in colnames(m)
+				newcol <- rep(NA,nrow(m))
+				oldnames <- colnames(m)
+				m <<- cbind(m,newcol)
+				colnames(m) <<- c(oldnames,ind)
+				m[dep,ind] <<- slope
+			} else {
+				newrow <- rep(NA,ncol(m))
+				oldnames <- rownames(m)
+				m <<- rbind(m,newrow)
+				rownames(m) <<- c(oldnames,dep)
+				newcol <- rep(NA,nrow(m))
+				oldnames <- colnames(m)
+				m <<- cbind(m,newcol)
+				colnames(m) <<- c(oldnames,ind)
+				m[dep,ind] <<- slope
 			}
 		}
 	}
 
-	timedependencies <<- data.frame(inds, deps, slopes, intersects, sps, ips)
+	apply(drives,1,matrixmaker)
+	return(m)
+}
 
-	# days, dis and norms are already in system
-	# library(Hmisc)
+plot_driver_heatmap <- function(fname){
+	library(gplots)
+	
+	m <- get_driver_matrix(fname)
+	m <- m[order(rownames(m)),order(colnames(m))]
+	heatmap.2(m,Rowv=NA,Colv=NA,col=cm.colors(256),na.color='gray',margins=c(10,10),trace='none')
+}
 
-	# disease <- c( rep(0,8), rep(1,8), rep(2,8), rep(4,8), rep(3,8))
-	# nogs <- c()
-	# rhos <- c()
-	# ps <- c()
-	# for (i in 1:nrow(norms)){
-	# 	val <- norms[i,]
-	# 	c <- rcorr(disease, val, type='spearman')
-	# 	nog <- rownames(norms)[i]
-	# 	rho <- c$r[1,2]
-	# 	p <- c$P[1,2]
-	# 	if(p < 0.05){
-	# 		nogs <- append(nogs, nog)
-	# 		rhos <- append(rhos, rho)
-	# 		ps <- append(ps, p)
-	# 	} 
-	# }
+plot_driver_barplot <- function(fname){
+	m <- get_driver_matrix(fname)
 
-	# spearmancorrs <<- data.frame(nogs,rhos,ps)
+	# dependent plot
+	depm <- matrix(nrow=nrow(m),ncol=5)
+	rownames(depm) <- rownames(m)
+	colnames(depm) <- c('Num. Pos.', 'Num. Neg.', 'Total Pos.', 'Total Neg.', 'Total')
+
+	rowfunc <- function(r){
+		name <- r[1]
+		data <- as.numeric(r[-1])
+		npos <- 0
+		nneg <- 0
+		tpos <- 0
+		tneg <- 0
+		for (val in data){
+			if(!is.na(val)){
+				if(val > 0){
+					npos <- npos + 1
+					tpos <- tpos + val
+				} else {
+					nneg <- nneg + 1
+					tneg <- tneg + abs(val)
+				}
+			}
+		}
+		t <- tpos - tneg
+		depm[name,] <<- c(npos, nneg, tpos, tneg, t)
+	}
+
+	apply(cbind(rownames(m),m), 1, rowfunc)
+
+	sums <- depm[,3] + abs(depm[,4])
+	depm <- depm[rev(order(sums)),]
+	
+
+	# independent plot
+
+	indm <- matrix(nrow=ncol(m),ncol=5)
+	rownames(indm) <- colnames(m)
+	colnames(indm) <- c('Num. Pos.', 'Num. Neg.', 'Total Pos.', 'Total Neg.', 'Total')
+
+	rowfunc2 <- function(r){
+		name <- r[1]
+		data <- as.numeric(r[-1])
+		npos <- 0
+		nneg <- 0
+		tpos <- 0
+		tneg <- 0
+		for (val in data){
+			if(!is.na(val)){
+				if(val > 0){
+					npos <- npos + 1
+					tpos <- tpos + val
+				} else {
+					nneg <- nneg + 1
+					tneg <- tneg + abs(val)
+				}
+			}
+		}
+		t <- tpos - tneg
+		indm[name,] <<- c(npos, nneg, tpos, tneg, t)
+	}
+
+	apply(cbind(colnames(m),t(m)), 1, rowfunc2)
+
+	sums <- indm[,3] + indm[,4]
+	indm <- indm[rev(order(sums)),]
+
+	# nf <- layout(matrix(c(1,2),nrow=2))
+	# layout.show(nf)
+
+	par(mfrow=c(3,2))
+	barplot(t(depm[1:25,]), beside=TRUE, col=cm.colors(5)[c(1,4,2,5,3)], las=2)
+	barplot(t(indm[1:25,]), beside=TRUE, legend=colnames(indm), col=cm.colors(5)[c(1,4,2,5,3)], las=2)
+
+	barplot(t(depm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
+	barplot(t(indm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
+
+	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
+	barplot(t(depm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
+
+
+
 }
