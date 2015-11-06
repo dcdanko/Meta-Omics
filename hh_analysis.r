@@ -276,6 +276,79 @@ analyze_drivercorr <- function(){
 	}
 }
 
+analyze_daycorr <- function(){
+	# find taxa with high sp rho to day and regress out the effects of day
+
+	dnames <- getDataNames()
+	dnames <- dnames
+	onames <- getOutNames('hh_results/diseaseday_corr/','.norm.diseaseday_corr.csv')
+	onames <- onames
+	adjnames <- getOutNames('hh_results/diseaseday_corr/','.norm.diseaseday_adjusted.matrix.csv')
+
+	for (i in 1:length(dnames)){
+		dname <- dnames[i]
+		oname <- onames[i]
+		adjname <- adjnames[i]
+
+		norms <- getNorms(dname)
+		disease <- rep(c(0,1,2,4,3),8)
+
+		delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
+		baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
+
+
+		intersects <- c()
+		slopes <- c()
+		sps <- c()
+		ips <- c()
+		names <- c()
+		adjnorms <- matrix(ncol=40,nrow=0)
+
+		basefunc <- function(normy){
+			name <- normy[1]
+			data <- as.numeric(normy[-1])
+			adjusted <- FALSE
+
+			if( length(data[data==0]) <=8 ){ # limit regression to data with enough non-zero values
+				fit <- lm(data ~ disease)
+				slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
+				interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
+				if(!is.na(slopepval) && slopepval < 0.05){ 
+					intersects <<- append(intersects, summary(fit)$coefficients[1,1])
+					slopes <<- append(slopes, summary(fit)$coefficients[2,1])
+					sps <<- append(sps, slopepval)
+					ips <<- append(ips, interceptpval)
+					names <<- append(names, name)
+					adjusted <- TRUE
+
+					predictedvals <- predict(fit, data.frame(disease=c(0,1,2,4,3)))
+					adjdata <- data - predictedvals
+
+					oldnames <- rownames(adjnorms)
+					adjnorms <<- rbind( adjnorms, adjdata)
+					rownames(adjnorms) <<- c(oldnames,name)
+
+				}
+			}
+
+			if( !adjusted){
+				oldnames <- rownames(adjnorms)
+				adjnorms <<- rbind( adjnorms, data)
+				rownames(adjnorms) <<- c(oldnames,name)
+			}
+		}
+		normswithnames <- cbind(rownames(norms),norms)
+		apply(normswithnames,1,basefunc)
+		colnames(adjnorms) <- colnames(norms)
+
+
+		timedependencies <- data.frame(inds, deps, slopes, intersects, names)
+		write.csv(timedependencies,oname)
+
+		write.csv(adjnorms,adjname)
+	}
+}
+
 analyze_spcorr <- function(){
 	norms <- getNorms('hh_data_norm/class.diamond.aggregated.counts.norm.matrix')
 	library(Hmisc)
