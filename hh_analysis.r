@@ -1,15 +1,24 @@
 
 readInMicroarray <- function(filename,idsfirst=FALSE){
 
-	microarrayFile <- read.table(filename, header = TRUE)
-
-	if(idsfirst){
-		M <- microarrayFile[,-1]
-		ids <- microarrayFile[,1]
+	extension <- tail( strsplit(filename,'[.]')[[1]], 1)
+	if(extension == "csv"){
+		microarrayFile <- read.table(filename, sep=",", header = TRUE)
 	} else {
-		M <- microarrayFile[,-dim(microarrayFile)[2]]
-		ids <- microarrayFile[,dim(microarrayFile)[2]]
+		microarrayFile <- read.table(filename, header = TRUE)
 	}
+	# print(colnames(microarrayFile))
+	# print(microarrayFile[1:5,])
+	# microarrayFile <- as.matrix( microarrayFile)
+	# print(microarrayFile[1:5,])
+
+	# if(idsfirst){
+		M <- microarrayFile[,-which(colnames(microarrayFile) == 'taxa')]
+		ids <- microarrayFile[,'taxa']
+	# } else {
+	# 	M <- microarrayFile[,-dim(microarrayFile)[2]]
+	# 	ids <- microarrayFile[,dim(microarrayFile)[2]]
+	# }
 
 	M <- sapply(M,as.numeric)
 	rownames(M) <- ids
@@ -18,6 +27,16 @@ readInMicroarray <- function(filename,idsfirst=FALSE){
 
 getNorms <- function(fname){
 	norms <- getClipNorms(fname, -1) # 300 for genus, 4,000 for nogs
+
+	# sort norms by day then rat
+	m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+	daysort <- order(as.numeric(do.call(rbind,strsplit(m[,1],'day'))[,2]))
+	norms <- norms[,daysort]
+
+	m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+	ratsort <- order(do.call(rbind,strsplit(m[,2],'_count'))[,1])
+	norms <- norms[,ratsort]
+
 	return(norms)
 }
 
@@ -156,7 +175,7 @@ analyze <- function(){
 analyze_drivercorr <- function(){
 	dnames <- getDataNames()
 	dnames <- dnames
-	onames <- getOutNames('hh_results/driver_corr/','.norm.driver_corr.csv')
+	onames <- getOutNames('hh_results/driver_corr/','.norm.diseaseday_adjusted.driver_corr.csv')
 	onames <- onames
 
 	for (i in 1:length(dnames)){
@@ -231,8 +250,8 @@ analyze_drivercorr <- function(){
 			depname <- depy[1]
 			dep <- depy[-1]
 
-			if( length(ind[ind==0]) < 9 && length(dep[dep==0]) < 9){ # limit regression to data with enough non-zero values
-					fit <- lm(ind ~ dep)
+			if( length(ind[ind==0]) <= 8 && length(dep[dep==0]) <= 8){ # limit regression to data with enough non-zero values
+					fit <- lm(dep ~ ind)
 					slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
 					interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
 					if(!is.na(slopepval) && slopepval < 0.05){ 
@@ -293,8 +312,8 @@ analyze_daycorr <- function(){
 		norms <- getNorms(dname)
 		disease <- rep(c(0,1,2,4,3),8)
 
-		delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
-		baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
+		# delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
+		# baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
 
 
 		intersects <- c()
@@ -342,7 +361,7 @@ analyze_daycorr <- function(){
 		colnames(adjnorms) <- colnames(norms)
 
 
-		timedependencies <- data.frame(inds, deps, slopes, intersects, names)
+		timedependencies <- data.frame(names, slopes, intersects, sps,ips)
 		write.csv(timedependencies,oname)
 
 		write.csv(adjnorms,adjname)
@@ -390,18 +409,25 @@ analyze_abundances <- function(){
 }
 
 getDataNames <- function(){
-	names <- c('hh_data_norm/species.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/genus.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/family.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/order.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/class.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/phylum.diamond.aggregated.counts.norm.matrix',
-		'hh_data_norm/gene_counts.norm.matrix')
+	# names <- c('hh_data_norm/species.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/genus.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/family.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/order.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/class.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/phylum.diamond.aggregated.counts.norm.matrix',
+	# 	'hh_data_norm/gene_counts.norm.matrix')
+
+	names <- c('~/Dropbox/hh_data/genus.diamond.aggregated.counts.norm.matrix')
+
+	names <- c('/Users/dcdanko/Science/Meta-Omics/hh_results/diseaseday_corr/genus.norm.diseaseday_adjusted.matrix.csv')
 	return(names)
+
+
 }
 
 getOutNames <- function(prefix, suffix){
-	names <- c('species','genus','family','order','class','phylum','gene_counts')
+	# names <- c('species','genus','family','order','class','phylum','gene_counts')
+	names <- c('genus')
 	onames <- paste(prefix,names,sep='')
 	onames <- paste(onames,suffix,sep='')
 	return(onames)
