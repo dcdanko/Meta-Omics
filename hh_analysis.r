@@ -1,3 +1,7 @@
+reload <- function(){
+	print('reloading... ')
+	source('hh_analysis.r')
+}
 
 readInMicroarray <- function(filename,idsfirst=FALSE){
 
@@ -25,17 +29,28 @@ readInMicroarray <- function(filename,idsfirst=FALSE){
 	return(M)
 }
 
-getNorms <- function(fname){
-	norms <- getClipNorms(fname, -1) # 300 for genus, 4,000 for nogs
+getNorms <- function(fname,sortbyday=FALSE){
+	norms <- getClipNorms(fname, -1) 
 
 	# sort norms by day then rat
-	m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
-	daysort <- order(as.numeric(do.call(rbind,strsplit(m[,1],'day'))[,2]))
-	norms <- norms[,daysort]
+	if(sortbyday){
+		m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+		ratsort <- order(do.call(rbind,strsplit(m[,2],'_count'))[,1])
+		norms <- norms[,ratsort]
 
-	m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
-	ratsort <- order(do.call(rbind,strsplit(m[,2],'_count'))[,1])
-	norms <- norms[,ratsort]
+		m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+		daysort <- order(as.numeric(do.call(rbind,strsplit(m[,1],'day'))[,2]))
+		norms <- norms[,daysort]
+	} else {
+		# sort norms by day then rat
+		m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+		daysort <- order(as.numeric(do.call(rbind,strsplit(m[,1],'day'))[,2]))
+		norms <- norms[,daysort]
+
+		m <- do.call(rbind, strsplit(colnames(norms), "[.]"))[,-1]
+		ratsort <- order(do.call(rbind,strsplit(m[,2],'_count'))[,1])
+		norms <- norms[,ratsort]
+	}
 
 	return(norms)
 }
@@ -85,16 +100,16 @@ getClipNorms <- function(fname, ngenes){
 
 
 getNormsByDay <- function(fname){
-	norms <- getNorms(fname)
-	# names are of the form: 'stool.day6.R1.diamond_count'
-	# make a list of days
-	splits <- strsplit(colnames(norms), split='[.]')
-	days <- sapply(sapply(splits,head,n=2), tail,n=1)
-	udays <- unique(days)
+	norms <- getNorms(fname,sortbyday=TRUE)
+
 	norms.byday <<- list(mode="matrix")
-	for (aDay in udays){
-		norms.byday[[aDay]] <<- norms[,grepl(aDay,colnames(norms))]
-	}
+
+	norms.byday[['d0']] <<- norms[,1:8]
+	norms.byday[['d3']] <<- norms[,9:16]
+	norms.byday[['d6']] <<- norms[,17:24]
+	norms.byday[['d14']] <<- norms[,25:32]
+	norms.byday[['d28']] <<- norms[,33:40]
+
 	return(norms.byday)
 }
 
@@ -172,11 +187,70 @@ analyze <- function(){
 
 }
 
-analyze_drivercorr <- function(){
+analyze_drivercorr_rise <- function(){
 	dnames <- getDataNames()
-	dnames <- dnames
-	onames <- getOutNames('hh_results/driver_corr/','.norm.diseaseday_adjusted.driver_corr.csv')
-	onames <- onames
+	onames <- getOutNames('hh_results/driver_corr/','.norm.d0d3d6_rise_only.driver_corr_pearsons.csv')
+
+	for (i in 1:length(dnames)){
+		dname <- dnames[i]
+		oname <- onames[i]
+
+		dontprint <- getNormsByRat(dname)
+		r1 <- norms.byrat$R1
+		delr1 <- r1[,2:3] - r1[,1:2]
+		baser1 <- r1[,1:2]
+		r2 <- norms.byrat$R2
+		delr2 <- r2[,2:3] - r2[,1:2]
+		baser2 <- r2[,1:2]
+		r3 <- norms.byrat$R3
+		delr3 <- r3[,2:3] - r3[,1:2]
+		baser3 <- r3[,1:2]
+		r4 <- norms.byrat$R4
+		delr4 <- r4[,2:3] - r4[,1:2]
+		baser4 <- r4[,1:2]
+		r5 <- norms.byrat$R5
+		delr5 <- r5[,2:3] - r5[,1:2]
+		baser5 <- r5[,1:2]
+		r6 <- norms.byrat$R6
+		delr6 <- r6[,2:3] - r6[,1:2]
+		baser6 <- r6[,1:2]
+		r7 <- norms.byrat$R7
+		delr7 <- r7[,2:3] - r7[,1:2]
+		baser7 <- r7[,1:2]
+		r8 <- norms.byrat$R8
+		delr8 <- r8[,2:3] - r8[,1:2]
+		baser8 <- r8[,1:2]
+
+		delall <- cbind(delr1,delr2,delr3,delr4,delr5,delr6,delr7,delr8)
+		baseall <- cbind(baser1,baser2,baser3,baser4,baser5,baser6,baser7,baser8)
+
+		colnames(delall) <- c('r1.del.d0d3','r1.del.d3d6',
+			'r2.del.d0d3','r2.del.d3d6',
+			'r3.del.d0d3','r3.del.d3d6',
+			'r4.del.d0d3','r4.del.d3d6',
+			'r5.del.d0d3','r5.del.d3d6',
+			'r6.del.d0d3','r6.del.d3d6',
+			'r7.del.d0d3','r7.del.d3d6',
+			'r8.del.d0d3','r8.del.d3d6')
+
+		colnames(baseall) <- c('r1.base.d0','r1.base.d3',
+			'r2.base.d0','r2.base.d3',
+			'r3.base.d0','r3.base.d3',
+			'r4.base.d0','r4.base.d3',
+			'r5.base.d0','r5.base.d3',
+			'r6.base.d0','r6.base.d3',
+			'r7.base.d0','r7.base.d3',
+			'r8.base.d0','r8.base.d3')
+
+		analyze_drivercorr(dname,oname,delall,baseall)
+	}
+
+
+}
+
+analyze_drivercorr_all <- function(){
+	dnames <- getDataNames()
+	onames <- getOutNames('hh_results/driver_corr/','.norm.d0d3d6_rise_only.driver_corr.csv')
 
 	for (i in 1:length(dnames)){
 		dname <- dnames[i]
@@ -229,70 +303,65 @@ analyze_drivercorr <- function(){
 			'r7.base.d0','r7.base.d3','r7.base.d6','r7.base.d14',
 			'r8.base.d0','r8.base.d3','r8.base.d6','r8.base.d14')
 
-		intersects <- c()
-		slopes <- c()
-		sps <- c()
-		ips <- c()
-		inds <- c()
-		deps <- c()
-
-		baseall <- cbind(rownames(baseall),baseall)
-		delall <- cbind(rownames(delall),delall)
-
-		depfunc <- function(dep){
-			apply(baseall,1,basefunc,dep)
-			
-		}
-
-		basefunc <- function(indy,depy){
-			indname <- indy[1]
-			ind <- indy[-1]
-			depname <- depy[1]
-			dep <- depy[-1]
-
-			if( length(ind[ind==0]) <= 8 && length(dep[dep==0]) <= 8){ # limit regression to data with enough non-zero values
-					fit <- lm(dep ~ ind)
-					slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
-					interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
-					if(!is.na(slopepval) && slopepval < 0.05){ 
-						intersects <<- append(intersects, summary(fit)$coefficients[1,1])
-						slopes <<- append(slopes, summary(fit)$coefficients[2,1])
-						sps <<- append(sps, slopepval)
-						ips <<- append(ips, interceptpval)
-						inds <<- append(inds, indname)
-						deps <<- append(deps, depname)
-					}
-				}
-		}
-
-		apply(delall,1,depfunc)
-
-		# for (i in 1:nrow(r1)){
-		# 	if( i %% 100 == 0){
-		# 		print( paste('row:',i))
-		# 	}
-		# 	for (j in 1:nrow(r1)){
-		# 		ind <- baseall[j,]
-		# 		dep <- delall[i,]
-		# 		if( length(ind[ind==0]) < 9 && length(dep[dep==0]) < 9){ # limit regression to data with enough non-zero values
-		# 			fit <- lm(ind ~ dep)
-		# 			slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
-		# 			interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
-		# 			if(!is.na(slopepval) && slopepval < 0.05){ 
-		# 				intersects <- append(intersects, summary(fit)$coefficients[1,1])
-		# 				slopes <- append(slopes, summary(fit)$coefficients[2,1])
-		# 				sps <- append(sps, slopepval)
-		# 				ips <- append(ips, interceptpval)
-		# 				inds <- append(inds, rownames(r1)[j])
-		# 				deps <- append(deps, rownames(r1)[i])
-		# 			}
-		# 		}
-		# 	}
-		# }
-
-		timedependencies <- data.frame(inds, deps, slopes, intersects, sps, ips)
-		write.csv(timedependencies,oname)
+		analyze_drivercorr(dname,oname,delall,baseall)
 	}
+}
+
+analyze_drivercorr <- function(dname, oname, delall, baseall){
+	library(Hmisc)
+
+	intersects <- c()
+	slopes <- c()
+	slopepvals <- c()
+	interceptpvals <- c()
+	inds <- c()
+	deps <- c()
+	pearsonsrs <- c()
+	pearsonsrpvals <- c()
+
+	baseall <- cbind(rownames(baseall),baseall)
+	delall <- cbind(rownames(delall),delall)
+
+	depfunc <- function(dep){
+		apply(baseall,1,basefunc,dep)
+		
+	}
+
+	basefunc <- function(indy,depy){
+		indname <- indy[1]
+		ind <- indy[-1]
+		depname <- depy[1]
+		dep <- depy[-1]
+
+		zerolim <- length(ind) / 4
+
+		if( length(ind[ind==0]) <= zerolim && length(dep[dep==0]) <= zerolim){ # limit regression to data with enough non-zero values
+
+			c <- rcorr(dep, ind, type='pearson')
+			pr <- c$r[1,2]
+			prpval <- c$P[1,2]
+			if(prpval < 0.05){
+
+				fit <- lm(dep ~ ind)
+				slopepval <- summary(fit)$coefficients[2,4] # easier way to get this?
+				interceptpval <- summary(fit)$coefficients[1,4] # easier way to get this?
+				# if(!is.na(slopepval) && slopepval < 0.05){ 
+					intersects <<- append(intersects, summary(fit)$coefficients[1,1])
+					slopes <<- append(slopes, summary(fit)$coefficients[2,1])
+					slopepvals <<- append(slopepvals, slopepval)
+					interceptpvals <<- append(interceptpvals, interceptpval)
+					inds <<- append(inds, indname)
+					deps <<- append(deps, depname)
+					pearsonsrs <<- append(pearsonsrs, pr)
+					pearsonsrpvals <<- append(pearsonsrpvals, prpval)
+			}
+		}
+	}
+
+	apply(delall,1,depfunc)
+
+	timedependencies <- data.frame(inds, deps, slopes, intersects, slopepvals, interceptpvals, pearsonsrs, pearsonsrpvals)
+	write.csv(timedependencies,oname)
 }
 
 analyze_daycorr <- function(){
@@ -417,9 +486,9 @@ getDataNames <- function(){
 	# 	'hh_data_norm/phylum.diamond.aggregated.counts.norm.matrix',
 	# 	'hh_data_norm/gene_counts.norm.matrix')
 
-	names <- c('~/Dropbox/hh_data/genus.diamond.aggregated.counts.norm.matrix')
+	names <- c('hh_data_norm/genus.diamond.aggregated.counts.norm.matrix')
 
-	names <- c('/Users/dcdanko/Science/Meta-Omics/hh_results/diseaseday_corr/genus.norm.diseaseday_adjusted.matrix.csv')
+	# names <- c('/Users/dcdanko/Science/Meta-Omics/hh_results/diseaseday_corr/genus.norm.diseaseday_adjusted.matrix.csv')
 	return(names)
 
 
@@ -502,7 +571,7 @@ analyze_movers <- function(){
 
 }
 
-get_driver_matrix <- function(fname){
+get_driver_matrix <- function(fname, pcut=0.001){
 	drives <- read.csv(fname)[,-1]
 
 	m <- matrix(nrow=0,ncol=0)
@@ -511,8 +580,12 @@ get_driver_matrix <- function(fname){
 		ind <- driver[1]
 		dep <- driver[2]
 		slope <- as.numeric(driver[3])
-		p <- as.numeric(driver[5])
-		if(p<0.01){
+		if(length(driver)>=7){ # indicates we have a p value for pearson's r
+			p <- as.numeric(driver[7])
+		} else {
+			p <- as.numeric(driver[5])
+		}
+		if(p<=pcut){
 			#print(m)
 			if( ind %in% colnames(m)){
 				if( !(dep %in% rownames(m))) {
@@ -547,12 +620,120 @@ get_driver_matrix <- function(fname){
 	return(m)
 }
 
+
+
 plot_driver_heatmap <- function(fname){
 	library(gplots)
 	
 	m <- get_driver_matrix(fname)
 	m <- m[order(rownames(m)),order(colnames(m))]
+	heatmap.2(m,Rowv='manhattan',Colv='manhattan',dendrogram='none',col=cm.colors(256),na.color='gray',margins=c(10,10),trace='none')
+}
+
+plot_driver_heatmap_abundance_normal <- function(fname,sname){
+	library(gplots)
+	
+	m <- get_driver_matrix(fname)
+	m <- m[order(rownames(m)),order(colnames(m))]
+	g <- get_ave_abundances_by_day_d0d3(sname)
+
+	for (c in 1:ncol(m)){
+		n <- g[colnames(m)[c]]
+		m[,c] <- m[,c] / n
+	}
+
 	heatmap.2(m,Rowv=NA,Colv=NA,col=cm.colors(256),na.color='gray',margins=c(10,10),trace='none')
+}
+
+plot_driver_barplot_abundance_normal <- function(fname,sname){
+	m <- get_driver_matrix(fname)
+	g <- get_ave_abundances_by_day_d0d3(sname)
+
+	for (c in 1:ncol(m)){
+		n <- g[colnames(m)[c]]
+		m[,c] <- m[,c] / n
+	}
+
+	# dependent plot
+	depm <- matrix(nrow=nrow(m),ncol=5)
+	rownames(depm) <- rownames(m)
+	colnames(depm) <- c('Num. Pos.', 'Num. Neg.', 'Total Pos.', 'Total Neg.', 'Total')
+
+	rowfunc <- function(r){
+		name <- r[1]
+		data <- as.numeric(r[-1])
+		npos <- 0
+		nneg <- 0
+		tpos <- 0
+		tneg <- 0
+		for (val in data){
+			if(!is.na(val)){
+				if(val > 0){
+					npos <- npos + 1
+					tpos <- tpos + val
+				} else {
+					nneg <- nneg + 1
+					tneg <- tneg + abs(val)
+				}
+			}
+		}
+		t <- tpos + tneg
+		depm[name,] <<- c(npos, nneg, tpos, tneg, t)
+	}
+
+	apply(cbind(rownames(m),m), 1, rowfunc)
+
+	sums <- depm[,3] + abs(depm[,4])
+	depm <- depm[rev(order(sums)),]
+	
+
+	# independent plot
+
+	indm <<- matrix(nrow=ncol(m),ncol=5)
+	rownames(indm) <<- colnames(m)
+	colnames(indm) <<- c('Num. Pos.', 'Num. Neg.', 'Total Pos.', 'Total Neg.', 'Total')
+
+	rowfunc2 <- function(r){
+		name <- r[1]
+		data <- as.numeric(r[-1])
+		npos <- 0
+		nneg <- 0
+		tpos <- 0
+		tneg <- 0
+		for (val in data){
+			if(!is.na(val)){
+				if(val > 0){
+					npos <- npos + 1
+					tpos <- tpos + val
+				} else {
+					nneg <- nneg + 1
+					tneg <- tneg + abs(val)
+				}
+			}
+		}
+		t <- tpos + tneg
+		indm[name,] <<- c(npos, nneg, tpos, tneg, t)
+	}
+
+	apply(cbind(colnames(m),t(m)), 1, rowfunc2)
+
+	sums <- indm[,3] + indm[,4]
+	sums <- indm[,5]
+	indm <<- indm[rev(order(sums)),]
+
+	# nf <- layout(matrix(c(1,2),nrow=2))
+	# layout.show(nf)
+
+	par(mfrow=c(3,2))
+	barplot(t(depm[1:25,]), beside=TRUE, col=cm.colors(5)[c(1,4,2,5,3)], las=2)
+	barplot(t(indm[1:25,]), beside=TRUE, legend=colnames(indm), col=cm.colors(5)[c(1,4,2,5,3)], las=2)
+
+	barplot(t(depm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
+	barplot(t(indm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
+
+	barplot(t(depm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
+	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
+
 }
 
 plot_driver_barplot <- function(fname){
@@ -581,7 +762,7 @@ plot_driver_barplot <- function(fname){
 				}
 			}
 		}
-		t <- tpos - tneg
+		t <- tpos + tneg
 		depm[name,] <<- c(npos, nneg, tpos, tneg, t)
 	}
 
@@ -615,13 +796,14 @@ plot_driver_barplot <- function(fname){
 				}
 			}
 		}
-		t <- tpos - tneg
+		t <- tpos + tneg
 		indm[name,] <<- c(npos, nneg, tpos, tneg, t)
 	}
 
 	apply(cbind(colnames(m),t(m)), 1, rowfunc2)
 
 	sums <- indm[,3] + indm[,4]
+
 	indm <- indm[rev(order(sums)),]
 
 	# nf <- layout(matrix(c(1,2),nrow=2))
@@ -634,9 +816,103 @@ plot_driver_barplot <- function(fname){
 	barplot(t(depm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
 	barplot(t(indm[1:25,1:2]), col=cm.colors(2), las=2, axisnames=FALSE)
 
-	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
 	barplot(t(depm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
+	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
 
 
+
+}
+
+get_ave_abundances_by_day_d0d3 <- function(fname){
+	normsbyday <- getNormsByDay(fname)
+	d0 <- normsbyday$d0 
+	d3 <- normsbyday$d3
+
+	dtotal <- d0 + d3
+	dave <- dtotal / 2
+	rowsums <- apply(dave, 1, sum)
+	rowave <- rowsums / 8
+
+	return(rowave)
+}
+
+get_driver_adjacency <- function(fname,pcut=0.001,power=4,edgecut=0.5){
+	m <- get_driver_matrix(fname,pcut=pcut)
+	allnodes <- union(colnames(m),rownames(m))
+	N <- length(allnodes)
+	adj <- matrix(0, ncol=N, nrow=N)
+	rownames(adj) <- allnodes
+	colnames(adj) <- allnodes
+
+	adjfunc <- function(x,pow){
+		val <- abs(x)^pow 
+		if(val > edgecut){
+			return(sign(x) * val)
+		}
+		return(0)
+	}
+
+	for (c in 1:ncol(m)){
+		ind <- colnames(m)[c]
+		for (r in 1:nrow(m)){
+			dep <- rownames(m)[r]
+			val <- m[r,c]
+			if(!is.na(val)){
+				adj[ind,dep] <- adjfunc( val, power)
+			}
+		}
+	}
+
+	zerorows <- apply(abs(adj),1,sum)
+	zerorows <- zerorows[zerorows==0]
+	zerocols <- apply(abs(adj),2,sum)
+	zerocols <- zerocols[zerocols==0]
+	zeronames <- intersect(names(zerorows),names(zerocols))
+
+	adj <- adj[!rownames(adj) %in% zeronames, !colnames(adj) %in% zeronames]
+
+	return(adj)
+}
+
+plot_driver_adjacency_graph <- function(driverf){
+	library(igraph)
+	adj <- get_driver_adjacency(driverf)
+	net <- graph.adjacency(adj,weighted=TRUE,mode='directed')
+	V(net)$size <- degree(net) / 2
+	V(net)$color <- 'plum'
+	E(net)[weight < 0]$color <- 'lightblue'
+	E(net)[weight >= 0]$color <- 'lightcoral'
+	med <- median( abs(E(net)$weight))
+	E(net)[weight > med]$color <- 'coral'
+	E(net)[weight < (-1*med)]$color <- 'lightslategrey'
+	par(mai=c(0,0,1,0)) 
+	plot(net, vertex.label.cex=0.7,layout=layout.fruchterman.reingold,vertex.label.dist=0.2,vertex.label.color='black',vertex.frame.color='plum')
+
+}
+
+plot_driver_adjacency_graph_with_abundance <- function(driverf, normf,pcut=0.001,power=4,edgecut=0.5,sizecut=1){
+	library(igraph)
+	abund <- get_ave_abundances_by_day_d0d3(normf)
+
+	adj <- get_driver_adjacency(driverf,pcut=pcut,power=power,edgecut=edgecut)
+	net <- graph.adjacency(adj,weighted=TRUE,mode='directed')
+
+	# edit the graph
+	V(net)$size <- abund[V(net)$name] 
+	vertstoremove <- V(net)[V(net)$size <= sizecut]
+	net <- delete.vertices(net, vertstoremove)
+	vertstoremove <- V(net)[which( degree(net) <= 0)]
+	net <- delete.vertices(net, vertstoremove)
+
+	# plot a pretty graph
+	V(net)$size <- V(net)$size / 2
+	V(net)$color <- 'plum'
+	E(net)[weight < 0]$color <- 'lightblue'
+	E(net)[weight >= 0]$color <- 'lightcoral'
+	med <- median( abs(E(net)$weight))
+	E(net)[weight > med]$color <- 'coral'
+	E(net)[weight < (-1*med)]$color <- 'lightslategrey'
+	par(mai=c(0,0,1,0)) 
+	plot(net, vertex.label.cex=0.7,layout=layout.fruchterman.reingold,vertex.label.dist=0.2,vertex.label.color='black',vertex.frame.color='plum')
 
 }
