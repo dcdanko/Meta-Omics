@@ -916,3 +916,50 @@ plot_driver_adjacency_graph_with_abundance <- function(driverf, normf,pcut=0.001
 	plot(net, vertex.label.cex=0.7,layout=layout.fruchterman.reingold,vertex.label.dist=0.2,vertex.label.color='black',vertex.frame.color='plum')
 
 }
+
+get_driver_overlap_matrix <- function(driverf){
+	adj <- get_driver_adjacency(driverf)
+
+
+	weightedOverlap <- function(v1,v2){
+		a1 <- abs(v1)
+		a2 <- abs(v2)
+
+		denominator <- min( sum(a1), sum(a2))
+		if(denominator == 0){
+			return(0)
+		}
+		denominator <- max(1, denominator)
+		numerator <- sum( mapply(min, a1, a2))
+		wo <- numerator / denominator
+
+		return(wo)
+	}
+
+	vectorWO <- function(v2, adjmatrix){
+		return( apply(adjmatrix,1,weightedOverlap, v2))
+	}
+
+	return(apply(adj, 1, vectorWO, adj))
+}
+
+plot_driver_overlap_heatmap <- function(driverf){
+	om <- get_driver_overlap_matrix(driverf)
+	omdist <- 1 - om 
+	tree <-  hclust( as.dist(omdist), method='average')
+	dynamicMods <- cutreeDynamic(dendro=tree, distM=omdist,deepSplit=2, pamRespectsDendro=FALSE)
+	dyncols <- labels2colors(dynamicMods)
+
+	melist <- moduleEigengenes(om, colors=dyncols)
+	mediss <- 1 - cor(melist$eigengenes)
+	# metree <- hclust( as.dist(mediss), method='average')
+	mergeheight <- 0.4
+	# plot(metree)
+	# abline(h=mergeheight,col='red')
+	merge <- mergeCloseModules(om, dyncols, cutHeight=mergeheight)
+
+	# plotDendroAndColors(tree,cbind(dyncols,merge$colors), c('Dynamic Tree Cut', 'Merged Dynamic'), dendroLabels=FALSE, hang=0.03)
+	TOMplot(omdist, tree, merge$colors)
+
+
+}
