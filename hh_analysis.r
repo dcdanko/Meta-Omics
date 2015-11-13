@@ -165,7 +165,7 @@ plotSoftThreshPowers <- function(fname,day='day6'){
 }
 
 
-plotTomHeatmap <- function(fname, day='day6',p=16){
+plotTomHeatmapByDay <- function(fname, day='day6',p=16){
 	nday <- getNormsByDay(fname)[[day]]
 	net <- getCorrelationNet(day=day,p=p)
 	nday <- nday[net$goodGenes == TRUE,]
@@ -946,4 +946,58 @@ plot_driver_overlap_heatmap <- function(driverf){
 
 	# plotDendroAndColors(tree,cbind(dyncols,merge$colors), c('Dynamic Tree Cut', 'Merged Dynamic'), dendroLabels=FALSE, hang=0.03)
 	TOMplot(omdist, tree, merge$colors)
+}
+
+get_pearson_adjacency_matrix <- function(fname){
+	library(Hmisc)
+	md <- getNormsByDay(fname)
+	md0d3d6 <- cbind(md$d0, md$d3, md$d6)
+
+	pearsons <- function(v1,v2){
+		c <- rcorr(v1, v2, type='pearson')
+		pr <- c$r[1,2]
+		prpval <- c$P[1,2]
+
+		if(prpval < 0.05){
+			return(pr)
+		}
+
+		return(0.0)
+	}
+
+	vectorPearsons <- function(v2, adjmatrix){
+		return( apply(adjmatrix,1,pearsons, v2))
+	}
+
+	pearsonMatrix <- apply(md0d3d6, 1, vectorPearsons, md0d3d6)
+	return(pearsonMatrix)
+}
+
+plot_pearson_heatmap <-function(fname){
+	library(WGCNA)
+
+	pearsonMatrix <- get_pearson_adjacency_matrix(fname)
+
+	pDist <- 1 - abs(pearsonMatrix)
+	tree <- hclust( as.dist(pDist), method='average')
+	dynamicMods <- cutreeDynamic(dendro=tree, distM=pDist,deepSplit=2, pamRespectsDendro=FALSE)
+	dyncols <- labels2colors(dynamicMods)
+	TOMplot(pDist^7, tree, dyncols)
+
+
+}
+
+plot_tom_heatmap <- function(fname){
+	library(WGCNA)
+
+	pearsonMatrix <- abs( get_pearson_adjacency_matrix(fname))^16
+
+	dissTOM <- 1 - TOMsimilarity(pearsonMatrix)
+
+
+	tree <- hclust( as.dist(dissTOM), method='average')
+	dynamicMods <- cutreeDynamic(dendro=tree, distM=dissTOM, deepSplit=2, pamRespectsDendro=FALSE)
+	dyncols <- labels2colors(dynamicMods)
+	TOMplot(dissTOM^7, tree, dyncols)
+
 }
