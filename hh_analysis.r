@@ -95,7 +95,6 @@ getClipNorms <- function(fname, ngenes){
 
 
 	return(norms)
-
 }
 
 
@@ -179,12 +178,6 @@ plotTomHeatmap <- function(fname, day='day6',p=16){
 
 	sizeGrWindow(9,9)
 	TOMplot(plotTOM, net$dendrograms[[1]], labels2colors(netcols), main="Normalized count TOM Network")
-
-}
-
-
-analyze <- function(){
-
 }
 
 analyze_drivercorr_rise <- function(){
@@ -244,8 +237,6 @@ analyze_drivercorr_rise <- function(){
 
 		analyze_drivercorr(dname,oname,delall,baseall)
 	}
-
-
 }
 
 analyze_drivercorr_all <- function(){
@@ -490,8 +481,6 @@ getDataNames <- function(){
 
 	# names <- c('/Users/dcdanko/Science/Meta-Omics/hh_results/diseaseday_corr/genus.norm.diseaseday_adjusted.matrix.csv')
 	return(names)
-
-
 }
 
 getOutNames <- function(prefix, suffix){
@@ -620,8 +609,6 @@ get_driver_matrix <- function(fname, pcut=0.001){
 	return(m)
 }
 
-
-
 plot_driver_heatmap <- function(fname){
 	library(gplots)
 	
@@ -733,7 +720,6 @@ plot_driver_barplot_abundance_normal <- function(fname,sname){
 
 	barplot(t(depm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
 	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
-
 }
 
 plot_driver_barplot <- function(fname){
@@ -818,9 +804,6 @@ plot_driver_barplot <- function(fname){
 
 	barplot(t(depm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
 	barplot(t(indm[1:25,3:4]), col=cm.colors(2), las=2, axisnames=FALSE)
-
-
-
 }
 
 get_ave_abundances_by_day_d0d3 <- function(fname){
@@ -914,7 +897,6 @@ plot_driver_adjacency_graph_with_abundance <- function(driverf, normf,pcut=0.001
 	E(net)[weight < (-1*med)]$color <- 'lightslategrey'
 	par(mai=c(0,0,1,0)) 
 	plot(net, vertex.label.cex=0.7,layout=layout.fruchterman.reingold,vertex.label.dist=0.2,vertex.label.color='black',vertex.frame.color='plum')
-
 }
 
 get_driver_overlap_matrix <- function(driverf){
@@ -950,7 +932,11 @@ plot_driver_overlap_heatmap <- function(driverf){
 	dynamicMods <- cutreeDynamic(dendro=tree, distM=omdist,deepSplit=2, pamRespectsDendro=FALSE)
 	dyncols <- labels2colors(dynamicMods)
 
-	melist <- moduleEigengenes(om, colors=dyncols)
+	nd <- getNormsByDay(sourcef)
+	dex <- cbind(nd$d0,nd$d3)[rownames(om),]
+
+
+	melist <- moduleEigengenes(dex, colors=dyncols)
 	mediss <- 1 - cor(melist$eigengenes)
 	# metree <- hclust( as.dist(mediss), method='average')
 	mergeheight <- 0.4
@@ -960,6 +946,4 @@ plot_driver_overlap_heatmap <- function(driverf){
 
 	# plotDendroAndColors(tree,cbind(dyncols,merge$colors), c('Dynamic Tree Cut', 'Merged Dynamic'), dendroLabels=FALSE, hang=0.03)
 	TOMplot(omdist, tree, merge$colors)
-
-
 }
