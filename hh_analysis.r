@@ -97,7 +97,6 @@ getClipNorms <- function(fname, ngenes){
 	return(norms)
 }
 
-
 getNormsByDay <- function(fname){
 	norms <- getNorms(fname,sortbyday=TRUE)
 
@@ -163,7 +162,6 @@ plotSoftThreshPowers <- function(fname,day='day6'){
 	     main = paste("Mean connectivity"))
 	text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
 }
-
 
 plotTomHeatmapByDay <- function(fname, day='day6',p=16){
 	nday <- getNormsByDay(fname)[[day]]
@@ -355,6 +353,10 @@ analyze_drivercorr <- function(dname, oname, delall, baseall){
 	write.csv(timedependencies,oname)
 }
 
+analyze_inflammation_coor <- function(){
+	inflammation <- c(0.2169321 ,0.4555597, 1.5710219, 6.3343269, 6.3248059 )
+}
+
 analyze_daycorr <- function(){
 	# find taxa with high sp rho to day and regress out the effects of day
 
@@ -452,8 +454,6 @@ analyze_spcorr <- function(){
 	spearmancorrs <<- data.frame(nogs,rhos,ps)
 	write.csv(spearmancorrs, 'hh_results/class.norms.diseasebyday.spearman_corr.csv')
 }
-
-
 
 analyze_abundances <- function(){
 	dnames <- getDataNames()
@@ -557,7 +557,6 @@ analyze_movers <- function(){
 		write.csv(aver,oname)
 	}
 	}}
-
 }
 
 get_driver_matrix <- function(fname, pcut=0.001){
@@ -983,8 +982,6 @@ plot_pearson_heatmap <-function(fname){
 	dynamicMods <- cutreeDynamic(dendro=tree, distM=pDist,deepSplit=2, pamRespectsDendro=FALSE)
 	dyncols <- labels2colors(dynamicMods)
 	TOMplot(pDist^7, tree, dyncols)
-
-
 }
 
 plot_tom_heatmap <- function(fname){
@@ -999,5 +996,50 @@ plot_tom_heatmap <- function(fname){
 	dynamicMods <- cutreeDynamic(dendro=tree, distM=dissTOM, deepSplit=2, pamRespectsDendro=FALSE)
 	dyncols <- labels2colors(dynamicMods)
 	TOMplot(dissTOM^7, tree, dyncols)
-
 }
+
+plot_inflammation_heatmap <- function(){
+	library(gplots)
+	a9 <- sapply(read.table('data/S100A9.matrix'), as.numeric)
+	a8 <- sapply(read.table('data/S100A8.matrix'), as.numeric)
+	inf <- (a8+a9)/2
+
+	par(mfrow=c(2,2))
+	#heatmap.2(a8,trace='none',Colv=FALSE,col=heat.colors(8))
+	#heatmap.2(a9,trace='none',Colv=FALSE,col=heat.colors(8))
+	heatmap.2(inf,trace='none',Colv=FALSE,col=heat.colors(8))
+}
+
+
+
+jsd <- function(a,b){
+	anorm <- a/sum(a)
+	bnorm <- b/sum(b)
+	m <- (anorm+bnorm)/2
+	div <- kld(anorm,m)/2 + kld(bnorm,m)/2
+	dist <- sqrt(div)
+	return(dist) 
+}
+
+kld <- function(a,b){
+	l <- log(a/b, 2)
+	l[is.na(l)] <- 0
+	l[is.infinite(l)] <- 0
+
+	return( sum( a * l))
+}
+ allpairsjsd <- function(fname){
+ 	n <- getNorms(fname)
+ 	pseudocount <- 0.00000001
+ 	n <- apply(n,1:2, function(x) ifelse (x==0,pseudocount,x))
+ 	m <- matrix(nrow=ncol(n),ncol=ncol(n))
+
+ 	for (i in 1:ncol(n)){
+ 		for (j in 1:ncol(n)){
+ 			m[i,j] <- jsd(n[,i], n[,j])
+ 		}
+ 	}
+ 	colnames(m) <- colnames(n)
+ 	rownames(m) <- colnames(n)
+ 	return(m)
+ }
